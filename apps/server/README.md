@@ -1,98 +1,176 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This service is a NestJS application implementing core authentication primitives and an audit pipeline. The README documents only the implemented (completed) areas: Prisma integration, local authentication (login), audit logging for authentication events, and a scheduled retention/cleanup job.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features (implemented)
+- Local authentication (email + password) with Argon2 verification and rehash support.
+- AuditEvent model + AuditService for structured, append-only audit entries.
+  - Covers login attempts, successes, failures, locks, and password reset events.
+- Retention policy: daily cleanup job that purges audit events older than 45 days.
+- Prisma ORM integration for PostgreSQL and schema models:
+  - `User` (nullable `hashedPassword` to support OAuth accounts)
+  - `Account` (provider linkage for OAuth)
+  - `AuditEvent` + `AuditAction` enum
+- Basic AuthController endpoint for login with DTO validation.
+- Non-blocking audit writes (audit failures are logged and do not block auth flow).
 
-## Description
+## Prerequisites
+- Node.js (tested with LTS)
+- pnpm
+- PostgreSQL-compatible database (Neon, RDS, etc.)
+- (Optional) Redis / queue if you later choose to make audit writes asynchronous
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Required environment variables
+Create a `.env` in the server app folder (not committed). Required:
+- DATABASE_URL - Prisma connection string. For Neon, ensure SSL: `?sslmode=require` (and consider `pgbouncer=true` for pooler endpoints).
 
-## Project setup
+Example:
+DATABASE_URL="postgresql://USER:PASSWORD@host:5432/dbname?sslmode=require"
 
-```bash
-$ pnpm install
-```
+## Setup (development)
+1. Install dependencies
+   pnpm install
 
-## Compile and run the project
+2. Generate Prisma client
+   pnpm --filter server exec prisma generate
 
-```bash
-# development
-$ pnpm run start
+3. Create / apply migrations (when schema changes)
+   pnpm --filter server exec prisma migrate dev --name <migration_name>
 
-# watch mode
-$ pnpm run start:dev
+4. Start development server (watch)
+   pnpm --filter server run start:dev
 
-# production mode
-$ pnpm run start:prod
-```
+The TypeScript compiler runs in watch mode; save files to recompile.
 
-## Run tests
+## API (implemented endpoints)
 
-```bash
-# unit tests
-$ pnpm run test
+- POST /auth/login
+  - Request body (JSON): { "email": "user@example.com", "password": "your-password" }
+  - Validation: DTO uses class-validator (IsEmail, MinLength).
+  - Response: { "user": { id, name, email, createdAt, updatedAt, ... } }
+  - Notes:
+    - Responses are intentionally generic on authentication failure ("Invalid credentials") to avoid user enumeration.
+    - Login attempts are tracked in an in-memory attempt map (process-local). Excess attempts lock the account for the configured interval and emit an `AUTH_LOGIN_LOCKED` audit event.
 
-# e2e tests
-$ pnpm run test:e2e
+## Prisma models (implemented)
+Key models in `prisma/schema.prisma`:
+- enum AuditAction { AUTH_LOGIN_ATTEMPT, AUTH_LOGIN_SUCCESS, AUTH_LOGIN_FAILED, AUTH_LOGIN_LOCKED, PASSWORD_RESET_REQUEST, PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILED }
+- model User { id, email, name, hashedPassword?, accounts, auditEvents, createdAt, updatedAt }
+- model Account { id, userId, provider, providerAccountId, accessToken?, refreshToken?, expiresAt?, ... }
+- model AuditEvent { id, userId?, user relation, email, action, success, reason?, ip?, requestId?, sessionId?, metadata?, createdAt }
 
-# test coverage
-$ pnpm run test:cov
-```
+(See `prisma/schema.prisma` for the exact schema.)
 
-## Deployment
+## Audit retention
+A scheduled cleanup service runs daily (via `@nestjs/schedule`) and deletes AuditEvent rows older than 45 days. Adjust retention by modifying RETENTION_DAYS in the cleanup service.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Notes & production recommendations
+- Keep `hashedPassword` nullable (supports OAuth-only accounts). For production, the recommended model is to maintain a separate `Account` model for external providers (implemented).
+- The current failed-login tracking is in-memory. For multi-instance or durable lockouts, use Redis or a DB-backed counter (recommended).
+- Audit writes are synchronous to the DB in the current implementation but tolerate failures. For high throughput, push audit events to a queue (BullMQ, Kafka) and persist from a worker.
+- When using cloud DBs (Neon), set `sslmode=require` in DATABASE_URL and prefer the direct DB endpoint for migrations if pooler issues arise. Add retry/backoff for Prisma connect at startup.
+- Protect access to audit logs (RBAC), redact or hash PII as required by compliance, and implement retention/archival policies.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Troubleshooting
+- Prisma cannot reach DB (Prisma P1001): verify `DATABASE_URL`, network, host, port, and SSL params. Test with `psql` or `nc -vz host 5432`.
+- TypeScript errors about nullable password: ensure code checks `user.hashedPassword` before calling `argon2.verify`.
+- Module registration errors (InvalidClassModuleException): ensure services are listed in `providers` and modules in `imports`; do not put service classes in `imports`.
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+## Tests
+Unit tests are scaffolded next to modules (spec files). Run the project tests using your workspace test runner configuration.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Next steps (suggested)
+- Replace in-memory attempt store with Redis for distributed lockouts.
+- Add OAuth callback handlers that use the `Account` model and safe linking logic (verify provider emails before auto-linking).
+- Add an audit consumer queue for high-volume event collection.
+- Harden logging, monitoring, and sensitive-data handling to meet compliance requirements.
 
-## Resources
+For implementation details, review source files under `src/{auth,users,audit,prisma}`.// filepath: /home/rewant/Desktop/authentication/FromScratch/apps/server/README.md
+# Server — Authentication FromScratch
 
-Check out a few resources that may come in handy when working with NestJS:
+This service is a NestJS application implementing core authentication primitives and an audit pipeline. The README documents only the implemented (completed) areas: Prisma integration, local authentication (login), audit logging for authentication events, and a scheduled retention/cleanup job.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Features (implemented)
+- Local authentication (email + password) with Argon2 verification and rehash support.
+- AuditEvent model + AuditService for structured, append-only audit entries.
+  - Covers login attempts, successes, failures, locks, and password reset events.
+- Retention policy: daily cleanup job that purges audit events older than 45 days.
+- Prisma ORM integration for PostgreSQL and schema models:
+  - `User` (nullable `hashedPassword` to support OAuth accounts)
+  - `Account` (provider linkage for OAuth)
+  - `AuditEvent` + `AuditAction` enum
+- Basic AuthController endpoint for login with DTO validation.
+- Non-blocking audit writes (audit failures are logged and do not block auth flow).
 
-## Support
+## Prerequisites
+- Node.js (tested with LTS)
+- pnpm
+- PostgreSQL-compatible database (Neon, RDS, etc.)
+- (Optional) Redis / queue if you later choose to make audit writes asynchronous
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Required environment variables
+Create a `.env` in the server app folder (not committed). Required:
+- DATABASE_URL - Prisma connection string. For Neon, ensure SSL: `?sslmode=require` (and consider `pgbouncer=true` for pooler endpoints).
 
-## Stay in touch
+Example:
+DATABASE_URL="postgresql://USER:PASSWORD@host:5432/dbname?sslmode=require"
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Setup (development)
+1. Install dependencies
+   pnpm install
 
-## License
+2. Generate Prisma client
+   pnpm --filter server exec prisma generate
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+3. Create / apply migrations (when schema changes)
+   pnpm --filter server exec prisma migrate dev --name <migration_name>
+
+4. Start development server (watch)
+   pnpm --filter server run start:dev
+
+The TypeScript compiler runs in watch mode; save files to recompile.
+
+## API (implemented endpoints)
+
+- POST /auth/login
+  - Request body (JSON): { "email": "user@example.com", "password": "your-password" }
+  - Validation: DTO uses class-validator (IsEmail, MinLength).
+  - Response: { "user": { id, name, email, createdAt, updatedAt, ... } }
+  - Notes:
+    - Responses are intentionally generic on authentication failure ("Invalid credentials") to avoid user enumeration.
+    - Login attempts are tracked in an in-memory attempt map (process-local). Excess attempts lock the account for the configured interval and emit an `AUTH_LOGIN_LOCKED` audit event.
+
+## Prisma models (implemented)
+Key models in `prisma/schema.prisma`:
+- enum AuditAction { AUTH_LOGIN_ATTEMPT, AUTH_LOGIN_SUCCESS, AUTH_LOGIN_FAILED, AUTH_LOGIN_LOCKED, PASSWORD_RESET_REQUEST, PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILED }
+- model User { id, email, name, hashedPassword?, accounts, auditEvents, createdAt, updatedAt }
+- model Account { id, userId, provider, providerAccountId, accessToken?, refreshToken?, expiresAt?, ... }
+- model AuditEvent { id, userId?, user relation, email, action, success, reason?, ip?, requestId?, sessionId?, metadata?, createdAt }
+
+(See `prisma/schema.prisma` for the exact schema.)
+
+## Audit retention
+A scheduled cleanup service runs daily (via `@nestjs/schedule`) and deletes AuditEvent rows older than 45 days. Adjust retention by modifying RETENTION_DAYS in the cleanup service.
+
+## Notes & production recommendations
+- Keep `hashedPassword` nullable (supports OAuth-only accounts). For production, the recommended model is to maintain a separate `Account` model for external providers (implemented).
+- The current failed-login tracking is in-memory. For multi-instance or durable lockouts, use Redis or a DB-backed counter (recommended).
+- Audit writes are synchronous to the DB in the current implementation but tolerate failures. For high throughput, push audit events to a queue (BullMQ, Kafka) and persist from a worker.
+- When using cloud DBs (Neon), set `sslmode=require` in DATABASE_URL and prefer the direct DB endpoint for migrations if pooler issues arise. Add retry/backoff for Prisma connect at startup.
+- Protect access to audit logs (RBAC), redact or hash PII as required by compliance, and implement retention/archival policies.
+
+## Troubleshooting
+- Prisma cannot reach DB (Prisma P1001): verify `DATABASE_URL`, network, host, port, and SSL params. Test with `psql` or `nc -vz host 5432`.
+- TypeScript errors about nullable password: ensure code checks `user.hashedPassword` before calling `argon2.verify`.
+- Module registration errors (InvalidClassModuleException): ensure services are listed in `providers` and modules in `imports`; do not put service classes in `imports`.
+
+## Tests
+Unit tests are scaffolded next to modules (spec files). Run the project tests using your workspace test runner configuration.
+
+## Next steps (suggested)
+- Replace in-memory attempt store with Redis for distributed lockouts.
+- Add OAuth callback handlers that use the `Account` model and safe linking logic (verify provider emails before auto-linking).
+- Add an audit consumer queue for high-volume event collection.
+- Harden logging, monitoring, and sensitive-data handling to meet compliance requirements.
+
+For implementation details, review source files under `src/{auth,users,audit,prisma}`.
