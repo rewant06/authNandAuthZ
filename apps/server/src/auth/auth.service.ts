@@ -349,4 +349,32 @@ export class AuthService {
       if (this.redisService) await this.releaseLock(lockKey);
     }
   }
+
+  //---------------------------------------------------------------------------------
+
+  async revokeRefreshToken(providedToken?: string): Promise<void> {
+    if (!providedToken) return;
+    const parts = this.parseRefreshToken(providedToken);
+    if (!parts) {
+      const idOnly = Number(providedToken);
+      if (!Number.isFinite(idOnly)) return;
+      await this.prisma.refreshToken.updateMany({
+        where: { id: idOnly, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      return;
+    }
+
+    const { tokenId } = parts;
+    await this.prisma.refreshToken.updateMany({
+      where: { id: tokenId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await this.auditService.log({
+      action: 'AUTH_REFRESH_REVOKE',
+      success: true,
+      timestamp: new Date(),
+      meta: { revokedTokenId: tokenId },
+    });
+  }
 }
