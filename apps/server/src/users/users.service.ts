@@ -73,7 +73,7 @@ export class UsersService {
               name: finalName,
               email: finalEmail,
               hashedPassword: hashPassword,
-              // role: 'USER',
+              role: 'USER',
             },
 
             select: {

@@ -7,38 +7,66 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 enum AuditAction {
   AUTH_LOGIN_ATTEMPT
   AUTH_LOGIN_SUCCESS
   AUTH_LOGIN_FAILED
   AUTH_LOGIN_LOCKED
+  AUTH_REFRESH_REUSED
+  AUTH_REFRESH_REUSE_DETECTED
+  AUTH_REFRESH_SUCCESS
   PASSWORD_RESET_REQUEST
   PASSWORD_RESET_SUCCESS
   PASSWORD_RESET_FAILED
+
 }
 
 model User {
-  id             String       @id @default(cuid())
-  email          String       @unique
+  id             String         @id @default(cuid())
+  email          String         @unique
   name           String?
+  role           Role           @default(USER)
   hashedPassword String?
   auditEvents    AuditEvent[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  refreshTokens  RefreshToken[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model AuditEvent {
-  id      String      @id @default(cuid())
-  userId  String?
-  user    User?       @relation(fields: [userId], references: [id])
-  email   String
-  action  AuditAction
-  success Boolean     @default(false)
-  reason  String?
-  ip      String?
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  email     String?
+  action    AuditAction
+  success   Boolean     @default(false)
+  reason    String?
+  ip        String?
+  device    String?
+  meta      Json?
+  timestamp DateTime    @default(now())
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  CreatedAt DateTime @default(now())
+  @@index([action, createdAt])
+  @@index([success, createdAt])
+}
 
-  @@index([action, CreatedAt])
-  @@index([success, CreatedAt])
+model RefreshToken {
+  id         Int       @id @default(autoincrement())
+  tokenHash  String
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  revoked    Boolean   @default(false)
+  device     String?
+  replacedBy Int? // to store id of replacing token
+  lastUsedAt DateTime?
 }

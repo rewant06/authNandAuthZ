@@ -4,11 +4,13 @@ import { AuditAction } from '@prisma/client';
 
 export type AuditLogInput = {
   userId?: string;
-  email: string;
+  email?: string | null;
   action: AuditAction;
   success: boolean;
-  reason?: string;
-  ip?: string;
+  reason?: string | null;
+  ip?: string | null;
+  device?: string | null;
+  meta?: Record<string, any>;
   timestamp: Date;
 };
 
@@ -23,12 +25,14 @@ export class AuditService {
       await this.prisma.auditEvent.create({
         data: {
           userId: input.userId ?? null,
-          email: input.email,
+          email: input.email ?? null,
           action: input.action,
           success: input.success,
           reason: input.reason ?? null,
           ip: input.ip ?? null,
-          CreatedAt: new Date(),
+          device: input.device ?? null,
+          meta: input.meta,
+          createdAt: new Date(),
         },
       });
     } catch (error) {
