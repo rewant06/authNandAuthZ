@@ -15,8 +15,8 @@ import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 
-const failedLoginAttempts = new Map<string, number>();
 const MAX_ATTEMPTS = 5;
+const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
 
 export interface AuthTokens {
   accessToken: string;
@@ -46,20 +46,24 @@ export class AuthService {
 
   async validateLocalUser(dto: LoginDto) {
     const inputEmail = dto.email.trim().toLowerCase();
-
+    const key = `rl:login:email:${inputEmail}`;
     //check for failed attempts
 
-    const attempts = failedLoginAttempts.get(inputEmail) || 0;
+    const attempts = await this.redisService.client.incr(key);
+
+    if (attempts === 1) {
+      await this.redisService.client.expire(key, LOCKOUT_TIME_SECONDS);
+    }
     if (attempts >= MAX_ATTEMPTS) {
-      await this.auditService.log({
+      this.auditService.log({
         email: inputEmail,
         action: 'AUTH_LOGIN_LOCKED',
         success: false,
-        reason: 'Account locked due to too many failed attempts',
+        reason: 'Account locked for 1 hour due to too many failed attempts',
         timestamp: new Date(),
       });
       throw new UnauthorizedException(
-        'Account locked due to too many failed attempts',
+        'Account locked due to too many failed attempts. Try again in 1 hour.',
       );
     }
     // Implement timing locked time of 15 mins
@@ -69,8 +73,7 @@ export class AuthService {
       await this.usersService.findUserByEmailWithPassword(inputEmail);
 
     if (!user || !user.hashedPassword) {
-      failedLoginAttempts.set(inputEmail, attempts + 1);
-      await this.auditService.log({
+      this.auditService.log({
         email: inputEmail,
         action: 'AUTH_LOGIN_FAILED',
         success: false,
@@ -82,8 +85,7 @@ export class AuthService {
     const isValid = await argon2.verify(user.hashedPassword, dto.password);
 
     if (!isValid) {
-      failedLoginAttempts.set(inputEmail, attempts + 1);
-      await this.auditService.log({
+      this.auditService.log({
         email: inputEmail,
         action: 'AUTH_LOGIN_FAILED',
         success: false,
@@ -94,9 +96,10 @@ export class AuthService {
     }
 
     // Reset failed attemps on sucessful login
-    failedLoginAttempts.delete(inputEmail);
+    await this.redisService.client.del(key);
 
-    await this.auditService.log({
+    this.auditService.log({
+      userId: user.id,
       email: inputEmail,
       action: 'AUTH_LOGIN_SUCCESS',
       success: true,
@@ -159,7 +162,7 @@ export class AuthService {
       );
       const refreshToken = `${created.id}.${rawToken}`;
 
-      await this.auditService.log({
+      this.auditService.log({
         userId: user.id,
         email: user.email,
         action: 'AUTH_LOGIN_SUCCESS',
@@ -215,7 +218,7 @@ export class AuthService {
   }
 
   private async handlePossibleReuse(storedToken: any) {
-    await this.auditService.log({
+    this.auditService.log({
       userId: storedToken.userId,
       email: storedToken.user.email,
       action: 'AUTH_REFRESH_REUSED',
@@ -284,7 +287,7 @@ export class AuthService {
           where: { userId: storedToken.userId, revokedAt: null },
           data: { revokedAt: new Date(), revoked: true },
         });
-        await this.auditService.log({
+        this.auditService.log({
           userId: storedToken.userId,
           action: 'AUTH_REFRESH_REUSE_DETECTED',
           success: false,
@@ -332,7 +335,7 @@ export class AuthService {
       const accessToken = await this.signAccessToken(user);
       const refreshToken = `${result.created.id}.${result.rawToken}`;
 
-      await this.auditService.log({
+      this.auditService.log({
         userId: storedToken.userId,
         email: user.email,
         action: 'AUTH_REFRESH_SUCCESS',
@@ -370,11 +373,22 @@ export class AuthService {
       where: { id: tokenId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
-    await this.auditService.log({
+    this.auditService.log({
       action: 'AUTH_REFRESH_REVOKE',
       success: true,
       timestamp: new Date(),
       meta: { revokedTokenId: tokenId },
     });
+  }
+
+  extractDeviceInfo(req: any): DeviceInfo {
+    const userAgent = req.headers?.['user-agent'] ?? null;
+    const ip =
+      (req.headers &&
+        (req.headers['x-forwarded-for'] ?? req.socket?.remoteAddress)) ||
+      req.ip ||
+      null;
+    // Optionally parse user-agent to friendly name (use ua-parser-js or similar in production)
+    return { userAgent: String(userAgent ?? ''), ip: String(ip ?? '') };
   }
 }

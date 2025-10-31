@@ -54,15 +54,6 @@ export class UsersService {
   async createLocalUser(dto: CreateLocalUserDto) {
     const finalEmail = dto.email.trim().toLowerCase();
     const finalName = dto.name?.trim();
-    //----------- Cheking the user with email is already existing or not ------------------------
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: finalEmail },
-      select: { id: true },
-    });
-
-    if (existingUser) {
-      throw new Error(`user with email: ${dto.email} already existes`);
-    }
 
     try {
       const newUser = await this.prisma.$transaction(

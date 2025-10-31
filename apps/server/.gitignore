@@ -58,8 +58,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /generated/prisma
 
 
-private-key.pem
-public-key.pem
-
-# jwt-private-key.pem
-# jwt-public-key.pem
+jwt-public.pem
+jwt-private.pem

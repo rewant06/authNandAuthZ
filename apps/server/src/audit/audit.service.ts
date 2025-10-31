@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction } from '@prisma/client';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
 export type AuditLogInput = {
   userId?: string;
@@ -18,9 +19,17 @@ export type AuditLogInput = {
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
-  async log(input: AuditLogInput) {
+  log(input: AuditLogInput) {
+    this.eventEmitter.emit('audit.log', input);
+  }
+
+  @OnEvent('audit.log', { async: true })
+  async handleAuditLogEvent(input: AuditLogInput) {
     try {
       await this.prisma.auditEvent.create({
         data: {
@@ -32,12 +41,14 @@ export class AuditService {
           ip: input.ip ?? null,
           device: input.device ?? null,
           meta: input.meta,
-          createdAt: new Date(),
+          createdAt: input.timestamp, // Use timestamp from the event
         },
       });
     } catch (error) {
       this.logger.error(
-        `Audit write failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Async audit write failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }

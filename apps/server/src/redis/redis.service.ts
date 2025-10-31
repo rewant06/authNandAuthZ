@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class RedisService implements OnModuleInit {
