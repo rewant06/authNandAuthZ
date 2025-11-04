@@ -1,9 +1,10 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as argon2 from 'argon2';
 
 @Injectable()
 export class RedisService implements OnModuleInit {
+  private readonly logger = new Logger(RedisService.name);
   client: Redis;
 
   async onModuleInit() {
@@ -17,15 +18,15 @@ export class RedisService implements OnModuleInit {
       retryStrategy: (times) => Math.min(times * 200, 5000),
     });
     this.client.on('error', (err) => {
-      console.error('[Redis] error:', err.message);
+      this.logger.error(`[Redis] error: ${err.message}`);
     });
 
     try {
       await this.client.connect();
       await this.client.ping();
-      console.log('[Redis] connected');
+      this.logger.log('[Redis] connected');
     } catch (err) {
-      console.error('[Redis] connection failed:', (err as Error).message);
+      this.logger.error('[Redis] connection failed:', (err as Error).message);
       if (process.env.NODE_ENV === 'production') {
         process.exit(1);
       }

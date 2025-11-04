@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import argon2 from 'argon2';
@@ -58,19 +63,31 @@ export class UsersService {
     try {
       const newUser = await this.prisma.$transaction(
         async (tx) => {
-          const hashPassword = await argon2.hash(dto.password);
+          const userRole = await tx.role.findUnique({
+            where: { name: 'USER' },
+          });
+          if (!userRole) {
+            throw new InternalServerErrorException(
+              'Default USER role not found',
+            );
+          }
+
+          const hashPassword = await this.hashPassword(dto.password);
           const newUser = await tx.user.create({
             data: {
               name: finalName,
               email: finalEmail,
               hashedPassword: hashPassword,
-              role: 'USER',
+              roles: {
+                connect: { id: userRole.id },
+              },
             },
 
             select: {
               id: true,
               name: true,
               email: true,
+              roles: true,
               createdAt: true,
               updatedAt: true,
             },

@@ -7,9 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  MANAGE // ALL
 }
 
 enum AuditAction {
@@ -30,12 +33,40 @@ model User {
   id             String         @id @default(cuid())
   email          String         @unique
   name           String?
-  role           Role           @default(USER)
+  roles           Role[]
   hashedPassword String?
   auditEvents    AuditEvent[]
   refreshTokens  RefreshToken[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique // e.g., "ADMIN", "USER", "MODERATOR"
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // A role can be assigned to many users
+  users       User[]
+  // A role has many permissions
+  permissions Permission[]
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  action    PermissionAction
+  // The subject: e.g., "User", "AuditLog", "Comment"
+  // We use "all" to represent "any subject" (e.g., for a super-admin)
+  subject   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A permission can be granted to many roles
+  roles     Role[]
+
+  @@unique([action, subject]) // Ensure "READ:User" can only exist once
 }
 
 model AuditEvent {

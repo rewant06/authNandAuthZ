@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
@@ -72,24 +73,22 @@ export class AuthService {
     const user =
       await this.usersService.findUserByEmailWithPassword(inputEmail);
 
-    if (!user || !user.hashedPassword) {
+    // 1. Get the hash. If user doesn't exist, use a "dummy" hash.
+    // This dummy hash should be a real Argon2 hash of a random string.
+    // For example, the hash of "dummy-password-for-timing-attack-prevention"
+    const hashToCompare =
+      user?.hashedPassword ??
+      '$argon2id$v=19$m=65536,t=3,p=1$QnUoe8k+GNOWgW/XoA3NRA$s5L1EC88p2F0N0UvAFvPZg/1LhINJz0IuS/aB8LMK+s';
+
+    // 2. Always run the verify function. This is the slow part.
+    const isValid = await argon2.verify(hashToCompare, dto.password);
+
+    if (!user || !user.hashedPassword || !isValid) {
       this.auditService.log({
         email: inputEmail,
         action: 'AUTH_LOGIN_FAILED',
         success: false,
         reason: 'Invalid email or password',
-        timestamp: new Date(),
-      });
-      throw new UnauthorizedException('Invalid credentials');
-    }
-    const isValid = await argon2.verify(user.hashedPassword, dto.password);
-
-    if (!isValid) {
-      this.auditService.log({
-        email: inputEmail,
-        action: 'AUTH_LOGIN_FAILED',
-        success: false,
-        reason: 'Incorrect password',
         timestamp: new Date(),
       });
       throw new UnauthorizedException('Invalid credentials');
@@ -111,11 +110,11 @@ export class AuthService {
   }
 
   private async signAccessToken(user: any): Promise<string> {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id };
     const expiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 
     try {
-      return await this.jwtService.signAsync(payload);
+      return await this.jwtService.signAsync([payload, { expiresIn }]);
     } catch (error) {
       this.logger.error('Failed signing access token', error);
       throw new InternalServerErrorException('Failed to sign access token');
@@ -255,7 +254,9 @@ export class AuthService {
       ? await this.acquireLock(lockKey, 5000)
       : true;
     if (!lockAcquired)
-      throw new BadRequestException('Could not acqurie rotation lock');
+      throw new ConflictException(
+        'A session refresh is already in progress. Please try again.',
+      );
 
     try {
       const storedToken = await this.prisma.refreshToken.findUnique({
@@ -359,12 +360,7 @@ export class AuthService {
     if (!providedToken) return;
     const parts = this.parseRefreshToken(providedToken);
     if (!parts) {
-      const idOnly = Number(providedToken);
-      if (!Number.isFinite(idOnly)) return;
-      await this.prisma.refreshToken.updateMany({
-        where: { id: idOnly, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
+      this.logger.warn('Revoke attempt with malformed token.');
       return;
     }
 

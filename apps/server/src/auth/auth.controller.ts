@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Body,
+  Get,
   ValidationPipe,
   UsePipes,
   ConflictException,
@@ -11,6 +12,7 @@ import {
   HttpStatus,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { CreateLocalUserDto } from './dto/createUser.dto';
@@ -18,6 +20,11 @@ import { LoginDto } from './dto/loginUser.dto';
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from './auth.service';
 import { parseDeviceInfo } from './device/device.util';
+import { JwtStrategy } from './strategy/jwt.strategy';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
+import { RequirePermission } from './rbac/permissions.decorator';
+import { PermissionsGuard } from './rbac/permissions.guard';
+import { PermissionAction } from './rbac/permission.types';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 
@@ -118,5 +125,13 @@ export class AuthController {
       domain: process.env.COOKIE_DOMAIN || undefined,
     });
     return;
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission([PermissionAction.READ, 'UserSelf'])
+  @HttpCode(HttpStatus.OK)
+  async getMe(@Req() req: Request) {
+    return { user: req.user };
   }
 }
