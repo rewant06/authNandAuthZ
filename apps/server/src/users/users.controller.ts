@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { User } from 'src/auth/decorator/user.decorator';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from 'src/auth/rbac/permissions.guard';
@@ -35,9 +36,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermission([PermissionAction.UPDATE, 'UserSelf']) // <-- THE PAYOFF
   @HttpCode(HttpStatus.OK)
-  async updateMe(@Req() req: Request, @Body() dto: UpdateSelfDto) {
+  async updateMe(@User() user: any, @Body() dto: UpdateSelfDto) {
     // req.user is the full user object from JwtStrategy
-    const user = (req as any).user;
     const updatedUser = await this.usersService.updateSelf(user.id, dto);
     return { user: updatedUser };
   }
