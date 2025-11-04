@@ -17,6 +17,15 @@ async function main() {
     create: { action: PermissionAction.MANAGE, subject: 'all' },
   });
 
+  const permUpdateSelf = await prisma.permission.upsert({
+    where: {
+      action_subject: { action: PermissionAction.UPDATE, subject: 'UserSelf' },
+    },
+    update: {},
+    create: { action: PermissionAction.UPDATE, subject: 'UserSelf' },
+  });
+  console.log('Created permissions.');
+
   // A "read all users" permission
   const permReadUsers = await prisma.permission.upsert({
     where: {
@@ -59,7 +68,7 @@ async function main() {
       name: 'USER',
       description: 'Standard user with basic permissions',
       permissions: {
-        connect: { id: permReadSelf.id }, // Connect to READ:UserSelf
+        connect: [{ id: permReadSelf.id }, { id: permUpdateSelf.id }], // Connect to READ:UserSelf
       },
     },
   });

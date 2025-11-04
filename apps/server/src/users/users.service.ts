@@ -2,12 +2,17 @@ import {
   Injectable,
   ConflictException,
   InternalServerErrorException,
+  NotFoundException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import argon2 from 'argon2';
 import { CreateLocalUserDto } from './dto/createUser.dto';
+import { RbacService } from 'src/auth/rbac/rbac.service';
+import { UpdateSelfDto } from './dto/update-self.dto';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +33,11 @@ export class UsersService {
     // Production turning: 1-4 is common.
     parallelism: 1,
   };
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    //INJECT THE RBAC SERVICE (using forwardRef to avoid circular dependency)
+    @Inject(forwardRef(() => RbacService)) private rbacService: RbacService,
+  ) {}
 
   // Hashing password with argon2 ---------------------------
 
@@ -107,6 +116,50 @@ export class UsersService {
         throw new ConflictException('Email already registered');
       }
       throw err;
+    }
+  }
+
+  async updateSelf(userId: string, dto: UpdateSelfDto) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          name: dto.name?.trim(),
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          createdAt: true,
+          updatedAt: true,
+          roles: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+      await this.rbacService.clearCacheForUser(userId);
+      this.logger.log(
+        `Successfully updated profile and cleared cache for user: ${userId}`,
+      );
+      return user;
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        // "Record to update not found"
+        if (err.code === 'P2025') {
+          this.logger.warn(`User not found for update: ${userId}`, err.stack);
+          // Throw a 404, which is what the client should see.
+          throw new NotFoundException('User not found');
+        }
+      }
+
+      // For all other database or application errors
+      this.logger.error(
+        `Failed to update profile for user: ${userId}`,
+        err.stack,
+      );
+      throw new InternalServerErrorException('Profile update failed.');
     }
   }
 
