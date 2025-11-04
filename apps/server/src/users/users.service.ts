@@ -13,6 +13,7 @@ import argon2 from 'argon2';
 import { CreateLocalUserDto } from './dto/createUser.dto';
 import { RbacService } from 'src/auth/rbac/rbac.service';
 import { UpdateSelfDto } from './dto/update-self.dto';
+import { AdminUpdateUserDto } from './dto/admin-update.dto';
 
 @Injectable()
 export class UsersService {
@@ -163,18 +164,6 @@ export class UsersService {
     }
   }
 
-  async getAllUsers() {
-    return this.prisma.user.findMany({
-      select: {
-        name: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
   async findUserByEmailWithPassword(email: string) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: email },
@@ -185,5 +174,90 @@ export class UsersService {
       },
     });
     return existingUser;
+  }
+
+  async updateUserById(userId: string, dto: AdminUpdateUserDto) {
+    this.logger.log(`Admin is attempting to update user: ${userId}`);
+
+    try {
+      const updatedUser = await this.prisma.$transaction(async (tx) => {
+        let roleIds: { id: string }[] | undefined = undefined;
+
+        if (dto.roles) {
+          const roles = await tx.role.findMany({
+            where: { name: { in: dto.roles } },
+            select: { id: true },
+          });
+          // Validate the all requrested roles actually exist
+          if (roles.length !== dto.roles.length) {
+            this.logger.warn(
+              `Admin update failed: Some roles not found for user ${userId}`,
+            );
+            throw new NotFoundException('One or more roles not found.');
+          }
+          roleIds = roles.map((r) => ({ id: r.id }));
+        }
+
+        // Now, update the user
+        const user = await tx.user.update({
+          where: { id: userId },
+          data: {
+            name: dto.name?.trim(),
+            roles: roleIds ? { set: roleIds } : undefined,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
+            roles: { select: { name: true } },
+          },
+        });
+        return user;
+      });
+      // CRITICAL: Clear the cache for the user who was just modified
+      await this.rbacService.clearCacheForUser(userId);
+      this.logger.log(
+        `Admin successfully updated user: ${userId}. Cache cleared.`,
+      );
+      return updatedUser;
+    } catch (error) {
+      if (error.code === 'p2025') {
+        this.logger.warn(
+          `Admin update failed: User not found: ${userId}`,
+          error.stack,
+        );
+        throw new NotFoundException('User not found');
+      }
+    }
+  }
+
+  async deleteUserById(userId: string): Promise<void> {
+    this.logger.log(`Admin is attempting to delete user: ${userId}`);
+
+    try {
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+
+      await this.rbacService.clearCacheForUser(userId);
+      this.logger.log(
+        `Admin successfully deleted user: ${userId}. Cache cleared`,
+      );
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          // Record to delete not found
+          this.logger.warn(
+            `Admin delete failed: User not found: ${userId}`,
+            error.stack,
+          );
+          throw new NotFoundException('User not found');
+        }
+      }
+      this.logger.error(`Admin delete failed for user: ${userId}`, error.stack);
+      throw new InternalServerErrorException('User deletion failed.');
+    }
   }
 }
