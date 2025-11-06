@@ -17,6 +17,14 @@ async function main() {
     create: { action: PermissionAction.MANAGE, subject: 'all' },
   });
 
+  const permReadActivityLog = await prisma.permission.upsert({
+    where: {
+      action_subject: { action: PermissionAction.READ, subject: 'ActivityLog' },
+    },
+    update: {},
+    create: { action: PermissionAction.READ, subject: 'ActivityLog' },
+  });
+
   const permUpdateSelf = await prisma.permission.upsert({
     where: {
       action_subject: { action: PermissionAction.UPDATE, subject: 'UserSelf' },
@@ -50,12 +58,16 @@ async function main() {
   // ADMIN Role
   const roleAdmin = await prisma.role.upsert({
     where: { name: 'ADMIN' },
-    update: {},
+    update: {
+      permissions: {
+        connect: { id: permReadActivityLog.id },
+      },
+    },
     create: {
       name: 'ADMIN',
       description: 'Site administrator with all permissions',
       permissions: {
-        connect: { id: permManageAll.id }, // Connect to MANAGE:all
+        connect: [{ id: permManageAll.id }, { id: permReadActivityLog.id }], // Connect to MANAGE:all
       },
     },
   });

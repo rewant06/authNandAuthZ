@@ -36,7 +36,7 @@ export class UsersService {
   };
   constructor(
     private prisma: PrismaService,
-    //INJECT THE RBAC SERVICE (using forwardRef to avoid circular dependency)
+    //(using forwardRef to avoid circular dependency)
     @Inject(forwardRef(() => RbacService)) private rbacService: RbacService,
   ) {}
 
@@ -120,7 +120,20 @@ export class UsersService {
     }
   }
 
+  async findUserByEmailWithPassword(email: string) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: email },
+      select: {
+        id: true,
+        email: true,
+        hashedPassword: true,
+      },
+    });
+    return existingUser;
+  }
+
   async updateSelf(userId: string, dto: UpdateSelfDto) {
+    this.logger.log(`Attempting to update profile for user: ${userId}`);
     try {
       const user = await this.prisma.user.update({
         where: { id: userId },
@@ -162,18 +175,6 @@ export class UsersService {
       );
       throw new InternalServerErrorException('Profile update failed.');
     }
-  }
-
-  async findUserByEmailWithPassword(email: string) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: email },
-      select: {
-        id: true,
-        email: true,
-        hashedPassword: true,
-      },
-    });
-    return existingUser;
   }
 
   async updateUserById(userId: string, dto: AdminUpdateUserDto) {

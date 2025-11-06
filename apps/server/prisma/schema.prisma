@@ -15,27 +15,28 @@ enum PermissionAction {
   MANAGE // ALL
 }
 
-enum AuditAction {
-  AUTH_LOGIN_ATTEMPT
-  AUTH_LOGIN_SUCCESS
-  AUTH_LOGIN_FAILED
-  AUTH_LOGIN_LOCKED
-  AUTH_REFRESH_REUSED
-  AUTH_REFRESH_REUSE_DETECTED
-  AUTH_REFRESH_SUCCESS
-  PASSWORD_RESET_REQUEST
-  PASSWORD_RESET_SUCCESS
-  PASSWORD_RESET_FAILED
-  AUTH_REFRESH_REVOKE
+// (Action)
+enum ActivityLogActionType {
+  CREATE
+  UPDATE
+  DELETE
+  EXECUTE // For custom actions like "USER_LOGIN
 }
+
+//  (The outcome)
+enum ActivityLogStatus {
+  SUCCESS
+  FAILED
+}
+
 
 model User {
   id             String         @id @default(cuid())
   email          String         @unique
   name           String?
   roles           Role[]
+  activityLogs    ActivityLog[]
   hashedPassword String?
-  auditEvents    AuditEvent[]
   refreshTokens  RefreshToken[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -69,27 +70,8 @@ model Permission {
   @@unique([action, subject]) // Ensure "READ:User" can only exist once
 }
 
-model AuditEvent {
-  id        String      @id @default(cuid())
-  userId    String?
-  user      User?       @relation(fields: [userId], references: [id])
-  email     String?
-  action    AuditAction
-  success   Boolean     @default(false)
-  reason    String?
-  ip        String?
-  device    String?
-  meta      Json?
-  timestamp DateTime    @default(now())
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@index([action, createdAt])
-  @@index([success, createdAt])
-}
-
 model RefreshToken {
-  id         Int       @id @default(autoincrement())
+  id         String      @id @default(cuid())
   tokenHash  String
   userId     String
   user       User      @relation(fields: [userId], references: [id])
@@ -98,6 +80,28 @@ model RefreshToken {
   revokedAt  DateTime?
   revoked    Boolean   @default(false)
   device     String?
-  replacedBy Int? // to store id of replacing token
+  replacedBy String? // to store id of replacing token
   lastUsedAt DateTime?
+}
+
+model ActivityLog {
+  id              String                @id @default(cuid())
+  actorId         String?
+  actor           User?                 @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorSnapshot   Json?
+  // (WHAT)
+  actionType      ActivityLogActionType
+  status          ActivityLogStatus
+  failureReason   String?               @db.Text
+  // (AFFECTED)
+  entityType      String
+  entityId        String?
+
+  changes         Json?
+  context         Json?
+  createdAt       DateTime              @default(now())
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([actionType])
 }

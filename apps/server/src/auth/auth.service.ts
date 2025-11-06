@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as argon2 from 'argon2';
-import { AuditService } from 'src/audit/audit.service';
 import { RedisService } from 'src/redis/redis.service';
+import { ActivityLogService } from 'src/activity-log/activity-log.service';
 import { LoginDto } from './dto/loginUser.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -40,7 +40,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private redisService: RedisService,
-    private auditService: AuditService,
+    private activityLogService: ActivityLogService,
     private jwtService: JwtService,
     private prisma: PrismaService,
   ) {}
@@ -56,13 +56,14 @@ export class AuthService {
       await this.redisService.client.expire(key, LOCKOUT_TIME_SECONDS);
     }
     if (attempts >= MAX_ATTEMPTS) {
-      this.auditService.log({
-        email: inputEmail,
-        action: 'AUTH_LOGIN_LOCKED',
-        success: false,
-        reason: 'Account locked for 1 hour due to too many failed attempts',
-        timestamp: new Date(),
-      });
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'Authentication', // entity Type
+        null,
+        { email: inputEmail },
+        'Account locked due to too many attempts',
+      );
       throw new UnauthorizedException(
         'Account locked due to too many failed attempts. Try again in 1 hour.',
       );
@@ -84,26 +85,27 @@ export class AuthService {
     const isValid = await argon2.verify(hashToCompare, dto.password);
 
     if (!user || !user.hashedPassword || !isValid) {
-      this.auditService.log({
-        email: inputEmail,
-        action: 'AUTH_LOGIN_FAILED',
-        success: false,
-        reason: 'Invalid email or password',
-        timestamp: new Date(),
-      });
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'Authentication', // entity Type
+        null,
+        { email: inputEmail },
+        'Invalid credentials',
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Reset failed attemps on sucessful login
     await this.redisService.client.del(key);
 
-    this.auditService.log({
-      userId: user.id,
-      email: inputEmail,
-      action: 'AUTH_LOGIN_SUCCESS',
-      success: true,
-      timestamp: new Date(),
-    });
+    await this.activityLogService.createLog(
+      'EXECUTE',
+      'SUCCESS',
+      'Authentication', // entity Type
+      user.id, // entityId
+      { email: inputEmail },
+    );
 
     const { hashedPassword: _, ...safeUser } = user;
     return safeUser;
@@ -111,10 +113,9 @@ export class AuthService {
 
   private async signAccessToken(user: any): Promise<string> {
     const payload = { sub: user.id };
-    const expiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 
     try {
-      return await this.jwtService.signAsync([payload, { expiresIn }]);
+      return await this.jwtService.signAsync(payload);
     } catch (error) {
       this.logger.error('Failed signing access token', error);
       throw new InternalServerErrorException('Failed to sign access token');
@@ -161,14 +162,13 @@ export class AuthService {
       );
       const refreshToken = `${created.id}.${rawToken}`;
 
-      this.auditService.log({
-        userId: user.id,
-        email: user.email,
-        action: 'AUTH_LOGIN_SUCCESS',
-        success: true,
-        timestamp: new Date(),
-        meta: { refreshId: created.id, device },
-      });
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'SUCCESS',
+        'Token', // entity Type
+        created.id, // entityId
+        { generatedToken: refreshToken },
+      );
 
       return { accessToken, refreshToken };
     } catch (error) {
@@ -186,12 +186,12 @@ export class AuthService {
 
   private parseRefreshToken(
     token: string,
-  ): { tokenId: number; tokenValue: string } | null {
+  ): { tokenId: string; tokenValue: string } | null {
     const parts = token.split('.');
     if (parts.length !== 2) return null;
-    const tokenId = Number(parts[0]);
+    const tokenId = parts[0];
     const tokenValue = parts[1];
-    if (!Number.isFinite(tokenId) || !tokenValue) return null;
+    if (!tokenId || !tokenValue) return null;
     return { tokenId, tokenValue };
   }
 
@@ -217,16 +217,14 @@ export class AuthService {
   }
 
   private async handlePossibleReuse(storedToken: any) {
-    this.auditService.log({
-      userId: storedToken.userId,
-      email: storedToken.user.email,
-      action: 'AUTH_REFRESH_REUSED',
-      success: false,
-      reason: 'Detected reuse of refresh token',
-      timestamp: new Date(),
-      meta: { tokenId: storedToken.id },
-    });
-
+    await this.activityLogService.createLog(
+      'EXECUTE',
+      'FAILED',
+      'Token',
+      storedToken.id,
+      { userId: storedToken.userId },
+      'Detected reuse of refresh token',
+    );
     await this.prisma.refreshToken.updateMany({
       where: {
         userId: storedToken.userId,
@@ -288,15 +286,17 @@ export class AuthService {
           where: { userId: storedToken.userId, revokedAt: null },
           data: { revokedAt: new Date(), revoked: true },
         });
-        this.auditService.log({
-          userId: storedToken.userId,
-          action: 'AUTH_REFRESH_REUSE_DETECTED',
-          success: false,
-          reason: 'Refresh token mismatch - possible theft',
-          timestamp: new Date(),
-        });
+        await this.activityLogService.createLog(
+          'EXECUTE',
+          'FAILED',
+          'Token',
+          storedToken.id,
+          { userId: storedToken.userId },
+          'Invalid refresh token (possible theft)',
+        );
+
         throw new UnauthorizedException(
-          'Invalid refresh token (possible theft',
+          'Invalid refresh token (possible theft)',
         );
       }
 
@@ -336,18 +336,14 @@ export class AuthService {
       const accessToken = await this.signAccessToken(user);
       const refreshToken = `${result.created.id}.${result.rawToken}`;
 
-      this.auditService.log({
-        userId: storedToken.userId,
-        email: user.email,
-        action: 'AUTH_REFRESH_SUCCESS',
-        success: true,
-        timestamp: new Date(),
-        meta: {
-          oldRefresh: storedToken.id,
-          newRefresh: result.created.id,
-          device,
-        },
-      });
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'SUCCESS',
+        'Token',
+        result.created.id,
+        { oldRefresh: storedToken.id, newRefresh: result.created.id },
+      );
+
       return { accessToken, refreshToken };
     } finally {
       if (this.redisService) await this.releaseLock(lockKey);
@@ -369,12 +365,14 @@ export class AuthService {
       where: { id: tokenId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
-    this.auditService.log({
-      action: 'AUTH_REFRESH_REVOKE',
-      success: true,
-      timestamp: new Date(),
-      meta: { revokedTokenId: tokenId },
-    });
+
+    await this.activityLogService.createLog(
+      'EXECUTE',
+      'SUCCESS',
+      'Token',
+      tokenId,
+      { revokedTokenId: tokenId },
+    );
   }
 
   extractDeviceInfo(req: any): DeviceInfo {
