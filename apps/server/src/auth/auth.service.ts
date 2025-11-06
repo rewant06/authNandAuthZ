@@ -10,11 +10,13 @@ import { UsersService } from 'src/users/users.service';
 import * as argon2 from 'argon2';
 import { RedisService } from 'src/redis/redis.service';
 import { ActivityLogService } from 'src/activity-log/activity-log.service';
+import { HttpContextService } from 'src/activity-log/http-context.service';
 import { LoginDto } from './dto/loginUser.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
+import { UserPayload } from './types/user-payload.type';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
@@ -43,6 +45,7 @@ export class AuthService {
     private activityLogService: ActivityLogService,
     private jwtService: JwtService,
     private prisma: PrismaService,
+    private httpContext: HttpContextService,
   ) {}
 
   async validateLocalUser(dto: LoginDto) {
@@ -95,6 +98,7 @@ export class AuthService {
       );
       throw new UnauthorizedException('Invalid credentials');
     }
+    this.httpContext.setActor(user);
 
     // Reset failed attemps on sucessful login
     await this.redisService.client.del(key);
@@ -112,7 +116,7 @@ export class AuthService {
   }
 
   private async signAccessToken(user: any): Promise<string> {
-    const payload = { sub: user.id };
+    const payload = { sub: user.id, jti: randomBytes(16).toString('hex') };
 
     try {
       return await this.jwtService.signAsync(payload);
@@ -352,26 +356,67 @@ export class AuthService {
 
   //---------------------------------------------------------------------------------
 
-  async revokeRefreshToken(providedToken?: string): Promise<void> {
-    if (!providedToken) return;
-    const parts = this.parseRefreshToken(providedToken);
-    if (!parts) {
-      this.logger.warn('Revoke attempt with malformed token.');
-      return;
+  async logout(
+    refreshToken: string | undefined,
+    accessToken: string | undefined,
+    actor: UserPayload,
+  ): Promise<void> {
+    if (refreshToken) {
+      const parts = this.parseRefreshToken(refreshToken);
+      if (parts) {
+        const { tokenId } = parts;
+        await this.prisma.refreshToken.updateMany({
+          where: { id: tokenId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+
+        await this.activityLogService.createLog(
+          'EXECUTE',
+          'SUCCESS',
+          'Token',
+          tokenId,
+          { revokedTokenId: tokenId },
+          'User logged out',
+        );
+      }
     }
+    if (accessToken) {
+      try {
+        const payload = await this.jwtService.decode(accessToken);
+        if (payload && payload.jti && payload.exp) {
+          const jti = payload.jti;
+          const exp = payload.exp;
+          const now = Math.floor(Date.now() / 1000);
 
-    const { tokenId } = parts;
-    await this.prisma.refreshToken.updateMany({
-      where: { id: tokenId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+          const ttl = exp - now;
 
+          if (ttl > 0) {
+            await this.redisService.set(`denylist:jti:${jti}`, '1', ttl);
+          }
+        }
+      } catch (e) {
+        this.logger.warn(
+          'Failed to denylist access token on logout',
+          e.message,
+        );
+      }
+    }
+  }
+
+  async logRevokeFailure(
+    err: any,
+    actor: UserPayload,
+    token: string | undefined,
+  ) {
+    const reason = err instanceof Error ? err.message : String(err);
+    this.logger.warn(`User ${actor.email} failed to logout: ${reason}`);
     await this.activityLogService.createLog(
       'EXECUTE',
-      'SUCCESS',
+      'FAILED',
       'Token',
-      tokenId,
-      { revokedTokenId: tokenId },
+      null,
+      { attemptedToken: token, actorId: actor.id },
+      `Logout/Revoke failed: ${reason}`,
     );
   }
 

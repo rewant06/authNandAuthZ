@@ -18,6 +18,7 @@ import { PermissionAction } from 'src/auth/rbac/permission.types';
 import { RequirePermission } from 'src/auth/rbac/permissions.decorator';
 import { UpdateSelfDto } from './dto/update-self.dto';
 import { AdminUpdateUserDto } from './dto/admin-update.dto';
+import type { UserPayload } from 'src/auth/types/user-payload.type';
 
 @Controller('users')
 export class UsersController {
@@ -28,7 +29,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermission([PermissionAction.UPDATE, 'UserSelf']) // <-- THE PAYOFF
   @HttpCode(HttpStatus.OK)
-  async updateMe(@User() user: any, @Body() dto: UpdateSelfDto) {
+  async updateMe(@User() user: UserPayload, @Body() dto: UpdateSelfDto) {
     // req.user is the full user object from JwtStrategy
     const updatedUser = await this.usersService.updateSelf(user.id, dto);
     return { user: updatedUser };
@@ -41,6 +42,7 @@ export class UsersController {
   @RequirePermission([PermissionAction.UPDATE, 'User'])
   @HttpCode(HttpStatus.OK)
   async updateUser(
+    @User() actor: UserPayload,
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() dto: AdminUpdateUserDto,
   ) {
@@ -52,7 +54,10 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermission([PermissionAction.DELETE, 'User'])
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(@Param('id', ParseUUIDPipe) userId: string) {
+  async deleteUser(
+    @User() actor: UserPayload,
+    @Param('id', ParseUUIDPipe) userId: string,
+  ) {
     await this.usersService.deleteUserById(userId);
     return;
   }

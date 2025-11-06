@@ -127,6 +127,12 @@ export class UsersService {
         id: true,
         email: true,
         hashedPassword: true,
+
+        roles: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
     return existingUser;

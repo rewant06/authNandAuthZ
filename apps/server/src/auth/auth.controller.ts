@@ -20,11 +20,12 @@ import { LoginDto } from './dto/loginUser.dto';
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from './auth.service';
 import { parseDeviceInfo } from './device/device.util';
-import { JwtStrategy } from './strategy/jwt.strategy';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { RequirePermission } from './rbac/permissions.decorator';
 import { PermissionsGuard } from './rbac/permissions.guard';
 import { PermissionAction } from './rbac/permission.types';
+import { User } from './decorator/user.decorator';
+import type { UserPayload } from './types/user-payload.type';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 
@@ -114,12 +115,22 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const cookie = req.cookies?.[REFRESH_COOKIE_NAME];
-    if (cookie) {
-      await this.authService.revokeRefreshToken(cookie);
+  @UseGuards(JwtAuthGuard)
+  async logout(
+    @User() actor: UserPayload,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
+    const authHeader = req.headers?.['authorization'];
+    const accessToken = authHeader ? authHeader.split(' ')[1] : undefined;
+
+    try {
+      await this.authService.logout(refreshToken, accessToken, actor);
+    } catch (err) {
+      this.authService.logRevokeFailure(err, actor, refreshToken);
     }
-    // clear cookie
+
     res.clearCookie(REFRESH_COOKIE_NAME, {
       path: '/',
       domain: process.env.COOKIE_DOMAIN || undefined,
@@ -131,7 +142,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermission([PermissionAction.READ, 'UserSelf'])
   @HttpCode(HttpStatus.OK)
-  async getMe(@Req() req: Request) {
-    return { user: req.user };
+  async getMe(@User() user: UserPayload) {
+    return { user: user };
   }
 }
