@@ -9,29 +9,38 @@ type Actor =
   | { id: string; email: string; roles: { name: string }[] };
 
 interface AppAsyncContext {
-  actor: Actor;
+  req: Request;
 }
 
 @Injectable()
 export class HttpContextService {
   private readonly storage = new AsyncLocalStorage<AppAsyncContext>();
 
-  run<T>(actor: Actor | undefined, fn: () => T): T {
-    const contextActor = actor || {
-      id: 'system',
-      email: 'system',
-      roles: [{ name: 'SYSTEM' }],
-    };
-    return this.storage.run({ actor: contextActor }, fn);
+  run<T>(req: Request, fn: () => T): T {
+    return this.storage.run({ req }, fn);
   }
 
   getActor(): Actor | undefined {
-    return this.storage.getStore()?.actor;
+    const req = this.storage.getStore()?.req;
+
+    return (
+      (req?.user as Actor) || {
+        id: 'system',
+        email: 'system',
+        roles: [{ name: 'SYSTEM' }],
+      }
+    );
   }
   setActor(actor: Actor) {
     const store = this.storage.getStore();
-    if (store) {
-      store.actor = actor;
+    if (store && store.req) {
+      store.req.user = actor;
     }
+  }
+
+  // Get the ip and User-Agent
+
+  getRequest(): Request | undefined {
+    return this.storage.getStore()?.req;
   }
 }

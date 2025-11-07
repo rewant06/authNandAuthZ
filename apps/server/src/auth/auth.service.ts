@@ -361,6 +361,15 @@ export class AuthService {
     accessToken: string | undefined,
     actor: UserPayload,
   ): Promise<void> {
+    await this.activityLogService.createLog(
+      'EXECUTE',
+      'SUCCESS',
+      'Authentication',
+      actor.id,
+      { action: 'logout_initiated' },
+      'User logged out',
+    );
+
     if (refreshToken) {
       const parts = this.parseRefreshToken(refreshToken);
       if (parts) {
@@ -387,7 +396,6 @@ export class AuthService {
           const jti = payload.jti;
           const exp = payload.exp;
           const now = Math.floor(Date.now() / 1000);
-
           const ttl = exp - now;
 
           if (ttl > 0) {

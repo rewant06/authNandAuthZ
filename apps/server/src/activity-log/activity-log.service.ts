@@ -67,10 +67,19 @@ export class ActivityLogService {
   ) {
     try {
       const actor = this.httpContext.getActor();
+      const req = this.httpContext.getRequest();
+
+      let contextData: any = {};
+      if (req) {
+        contextData = {
+          ip: req.ip || req.socket?.remoteAddress,
+          userAgent: req.headers?.['user-agent'],
+        };
+      }
 
       await this.prisma.activityLog.create({
         data: {
-          actorId: actor?.id,
+          actorId: actor?.id === 'system' ? null : actor?.id,
           // Create a "snapshot" of the actor for long-term storage
           actorSnapshot: actor
             ? { email: actor.email, roles: actor.roles }
@@ -81,8 +90,7 @@ export class ActivityLogService {
           entityId: entityId || null,
           changes: changes || undefined,
           failureReason: failureReason || undefined,
-          // We can also store IP/User-Agent if we add it to the context
-          context: undefined,
+          context: contextData,
         },
       });
     } catch (err) {
