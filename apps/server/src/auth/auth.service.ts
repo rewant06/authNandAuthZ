@@ -17,6 +17,8 @@ import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 import { UserPayload } from './types/user-payload.type';
+import { RbacService } from './rbac/rbac.service';
+import { permission } from 'process';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
@@ -46,6 +48,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private httpContext: HttpContextService,
+    private rbacService: RbacService,
   ) {}
 
   async validateLocalUser(dto: LoginDto) {
@@ -116,7 +119,17 @@ export class AuthService {
   }
 
   private async signAccessToken(user: any): Promise<string> {
-    const payload = { sub: user.id, jti: randomBytes(16).toString('hex') };
+    const userPermissions = await this.rbacService.getPermissionsForUser(
+      user.id,
+    );
+    const payload = {
+      sub: user.id,
+      jti: randomBytes(16).toString('hex'),
+      roles: user.roles.map((role) => role.name),
+      permissions: userPermissions.map(
+        (permission) => `${permission.action}:${permission.subject}`,
+      ),
+    };
 
     try {
       return await this.jwtService.signAsync(payload);

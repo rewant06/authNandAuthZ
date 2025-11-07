@@ -29,9 +29,9 @@ const publicKey = loadPublicKey();
     }),
   ],
   providers: [
+    RbacService,
     AuthService,
     JwtStrategy,
-    RbacService,
     PermissionsGuard,
     JwtAuthGuard,
   ],

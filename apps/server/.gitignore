@@ -62,3 +62,4 @@ jwt-public.pem
 jwt-private.pem
 
 prisma/seed.ts
+Plans.md
