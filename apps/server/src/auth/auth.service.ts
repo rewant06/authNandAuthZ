@@ -21,6 +21,8 @@ import { addDays } from 'date-fns';
 import { UserPayload } from './types/user-payload.type';
 import { RbacService } from './rbac/rbac.service';
 import { ForgotPassword } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { loadPublicKey } from 'src/common/keys';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
@@ -459,7 +461,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       jti: randomBytes(16).toString('hex'),
-      and: 'password-reset',
+      aud: 'password-reset',
     };
     return this.jwtService.signAsync(payload, { expiresIn: '15m' });
   }
@@ -508,5 +510,98 @@ export class AuthService {
         error.stack,
       );
     }
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<void> {
+    const { token, password } = dto;
+    let payload: { sub: string; jti: string; aud: string; exp: number };
+
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: loadPublicKey(),
+        algorithms: ['RS256'],
+        audience: 'password-reset',
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Password reset failed: Invalid or expired token provided.`,
+      );
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'Authentication',
+        null,
+        { action: 'password-reset-attemp' },
+        `Invalid or expired token: ${error.message}`,
+      );
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    // Check the DenyList
+
+    const { jti, sub: userId, exp } = payload;
+    const isDenied = await this.redisService.get(`denylist:jti:${jti}`);
+
+    if (isDenied) {
+      this.logger.warn(`Password reset failed: Token already used: ${jti}`);
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'User',
+        userId,
+        { action: 'password-reset-attempt', jti },
+      );
+      throw new BadRequestException('Token has already been used.');
+    }
+
+    let user: UserPayload;
+    try {
+      const hashedPassword = await this.usersService.hashPassword(password);
+
+      user = await this.prisma.user.update({
+        where: { id: userId },
+        data: { hashedPassword },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          roles: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+      this.logger.log(`User password reset sucessfully for: ${user.email}`);
+    } catch (error) {
+      this.logger.log(
+        `Failed to update password for user: ${userId}`,
+        error.stack,
+      );
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'User',
+        userId,
+        { action: 'password-reset' },
+        `Failed to update password in DB: ${error.message}`,
+      );
+      throw new InternalServerErrorException('Password update failed.');
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = exp - now;
+
+    if (ttl > 0) {
+      await this.redisService.set(`denylist:jti:${jti}`, `1`, ttl);
+    }
+
+    await this.activityLogService.createLog(
+      'UPDATE',
+      'SUCCESS',
+      'User',
+      userId,
+      { action: 'password-reset-success' },
+    );
   }
 }

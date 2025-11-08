@@ -27,6 +27,7 @@ import { PermissionAction } from './rbac/permission.types';
 import { User } from './decorator/user.decorator';
 import type { UserPayload } from './types/user-payload.type';
 import { ForgotPassword } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 
@@ -143,6 +144,13 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async forgotPassword(@Body() dto: ForgotPassword) {
     await this.authService.forgotPassword(dto);
+    return;
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto);
     return;
   }
 

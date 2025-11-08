@@ -45,7 +45,7 @@ export class UsersService {
 
   // Hashing password with argon2 ---------------------------
 
-  private hashPassword(password: string) {
+  hashPassword(password: string) {
     return argon2.hash(password, UsersService.ARGON2_OPTIONS);
   }
 
