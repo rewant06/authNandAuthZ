@@ -129,6 +129,7 @@ export class AuthService {
     );
     const payload = {
       sub: user.id,
+      name: user.name,
       jti: randomBytes(16).toString('hex'),
       roles: user.roles.map((role) => role.name),
       permissions: userPermissions.map(

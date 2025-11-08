@@ -7,7 +7,6 @@ import { UserPayload } from '../types/user-payload.type';
 import { RedisService } from 'src/redis/redis.service';
 import { HttpContextService } from 'src/activity-log/http-context.service';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -35,7 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req as any);
     if (!token) return null;
-    
+
     const decoded: any = this.jwtService.decode(token);
     if (!decoded?.jti) {
       return null; // No JTI, invalid token
