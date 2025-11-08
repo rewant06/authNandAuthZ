@@ -8,14 +8,20 @@ import { RedisModule } from './redis/redis.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpContextInterceptor } from './activity-log/http-context.interceptor';
+import { MailModule } from './mail/mail.module';
+import { QueuesModule } from './queues/queues.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
     PrismaModule,
     AuthModule,
     RedisModule,
     ActivityLogModule,
+    MailModule,
+    QueuesModule,
   ],
   controllers: [AppController],
   providers: [

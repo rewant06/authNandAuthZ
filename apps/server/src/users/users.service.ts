@@ -14,6 +14,9 @@ import { CreateLocalUserDto } from './dto/createUser.dto';
 import { RbacService } from 'src/auth/rbac/rbac.service';
 import { UpdateSelfDto } from './dto/update-self.dto';
 import { AdminUpdateUserDto } from './dto/admin-update.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { UserPayload } from 'src/auth/types/user-payload.type';
+import { PaginatedResponse } from 'src/common/types/response.type';
 
 @Injectable()
 export class UsersService {
@@ -120,11 +123,59 @@ export class UsersService {
     }
   }
 
+  async getAllUsers(
+    dto: PaginationDto,
+  ): Promise<PaginatedResponse<Partial<UserPayload>>> {
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    this.logger.log(`Fetching all users: Page ${page}, Limit ${limit}`);
+
+    try {
+      const [users, total] = await this.prisma.$transaction([
+        this.prisma.user.findMany({
+          skip: skip,
+          take: limit,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            roles: {
+              select: {
+                name: true,
+              },
+            },
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.user.count(),
+      ]);
+      const totalPages = Math.ceil(total / limit);
+      return {
+        data: users,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages,
+          lastPage: totalPages === page,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Failed to get paginated users', error.stack);
+      throw new InternalServerErrorException('Could not retrieve users');
+    }
+  }
+
   async findUserByEmailWithPassword(email: string) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: email },
       select: {
         id: true,
+        name: true,
         email: true,
         hashedPassword: true,
 

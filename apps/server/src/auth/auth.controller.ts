@@ -26,6 +26,7 @@ import { PermissionsGuard } from './rbac/permissions.guard';
 import { PermissionAction } from './rbac/permission.types';
 import { User } from './decorator/user.decorator';
 import type { UserPayload } from './types/user-payload.type';
+import { ForgotPassword } from './dto/forgot-password.dto';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 
@@ -135,6 +136,13 @@ export class AuthController {
       path: '/',
       domain: process.env.COOKIE_DOMAIN || undefined,
     });
+    return;
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async forgotPassword(@Body() dto: ForgotPassword) {
+    await this.authService.forgotPassword(dto);
     return;
   }
 

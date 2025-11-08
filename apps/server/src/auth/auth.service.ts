@@ -6,6 +6,8 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { UsersService } from 'src/users/users.service';
 import * as argon2 from 'argon2';
 import { RedisService } from 'src/redis/redis.service';
@@ -18,7 +20,7 @@ import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 import { UserPayload } from './types/user-payload.type';
 import { RbacService } from './rbac/rbac.service';
-import { permission } from 'process';
+import { ForgotPassword } from './dto/forgot-password.dto';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
@@ -49,6 +51,7 @@ export class AuthService {
     private prisma: PrismaService,
     private httpContext: HttpContextService,
     private rbacService: RbacService,
+    @InjectQueue('email') private emailQueue: Queue,
   ) {}
 
   async validateLocalUser(dto: LoginDto) {
@@ -450,5 +453,60 @@ export class AuthService {
       null;
     // Optionally parse user-agent to friendly name (use ua-parser-js or similar in production)
     return { userAgent: String(userAgent ?? ''), ip: String(ip ?? '') };
+  }
+
+  private async _createPasswordResetToken(user: UserPayload): Promise<string> {
+    const payload = {
+      sub: user.id,
+      jti: randomBytes(16).toString('hex'),
+      and: 'password-reset',
+    };
+    return this.jwtService.signAsync(payload, { expiresIn: '15m' });
+  }
+
+  async forgotPassword(dto: ForgotPassword): Promise<void> {
+    const email = dto.email.trim().toLowerCase();
+
+    await this.activityLogService.createLog(
+      'EXECUTE',
+      'SUCCESS',
+      'Authentication',
+      null,
+      {
+        email,
+        action: 'forgot-password-attemp',
+      },
+    );
+
+    const user = await this.usersService.findUserByEmailWithPassword(email);
+
+    if (!user) {
+      this.logger.log(`Password reset attemp for non-existent email: ${email}`);
+      return;
+    }
+
+    try {
+      const token = await this._createPasswordResetToken(user);
+      await this.emailQueue.add('send-password-reset', {
+        email: user.email,
+        token,
+      });
+
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'SUCCESS',
+        'User',
+        user.id,
+        {
+          email,
+          action: 'password-reset-request',
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to queue password reset job for ${email}`,
+        error.stack,
+      );
+    }
   }
 }

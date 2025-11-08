@@ -10,6 +10,7 @@ import { RedisModule } from 'src/redis/redis.module';
 import { RbacService } from './rbac/rbac.service';
 import { PermissionsGuard } from './rbac/permissions.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
+import { QueuesModule } from 'src/queues/queues.module';
 
 const privateKey = loadPrivateKey();
 const publicKey = loadPublicKey();
@@ -27,6 +28,7 @@ const publicKey = loadPublicKey();
         expiresIn: 900,
       },
     }),
+    QueuesModule,
   ],
   providers: [
     RbacService,

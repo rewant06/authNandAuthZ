@@ -8,6 +8,8 @@ import {
   HttpStatus,
   UseGuards,
   ParseUUIDPipe,
+  Get,
+  Query,
 } from '@nestjs/common';
 
 import { User } from 'src/auth/decorator/user.decorator';
@@ -19,6 +21,7 @@ import { RequirePermission } from 'src/auth/rbac/permissions.decorator';
 import { UpdateSelfDto } from './dto/update-self.dto';
 import { AdminUpdateUserDto } from './dto/admin-update.dto';
 import type { UserPayload } from 'src/auth/types/user-payload.type';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('users')
 export class UsersController {
@@ -34,6 +37,8 @@ export class UsersController {
     const updatedUser = await this.usersService.updateSelf(user.id, dto);
     return { user: updatedUser };
   }
+
+  // -------------- Admin ----------------------------------
 
   // ADMIN: Update other user
 
@@ -60,5 +65,13 @@ export class UsersController {
   ) {
     await this.usersService.deleteUserById(userId);
     return;
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission([PermissionAction.READ, 'User'])
+  @HttpCode(HttpStatus.OK)
+  async getAllUsers(@Query() dto: PaginationDto) {
+    return this.usersService.getAllUsers(dto);
   }
 }
