@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
   ConflictException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -23,6 +24,7 @@ import { RbacService } from './rbac/rbac.service';
 import { ForgotPassword } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { loadPublicKey } from 'src/common/keys';
+import { CreateLocalUserDto } from './dto/createUser.dto';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
@@ -55,6 +57,41 @@ export class AuthService {
     private rbacService: RbacService,
     @InjectQueue('email') private emailQueue: Queue,
   ) {}
+
+  private async _createEmailVerificationToken(
+    user: UserPayload,
+  ): Promise<string> {
+    const payload = {
+      sub: user.id,
+      jti: randomBytes(16).toString('hex'),
+      aud: 'verify-email',
+    };
+    return this.jwtService.signAsync(payload);
+  }
+
+  async register(dto: CreateLocalUserDto) {
+    const newUser = await this.usersService.createLocalUser(dto);
+    try {
+      const token = await this._createEmailVerificationToken(newUser);
+      await this.emailQueue.add('send-welcome-email', {
+        email: newUser.email,
+        token,
+      });
+
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'SUCCESS',
+        'User',
+        newUser.id,
+        { email: newUser.email, action: 'email-verification-sent' },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to queue welcome email for ${newUser.email}`,
+        error.stack,
+      );
+    }
+  }
 
   async validateLocalUser(dto: LoginDto) {
     const inputEmail = dto.email.trim().toLowerCase();
@@ -106,6 +143,21 @@ export class AuthService {
       );
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    if (!user.isEmailVerified) {
+      this.logger.warn(`Login attempt from unverified email: ${user.email}`);
+
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'Authentication',
+        user.id,
+        { email: user.email },
+        'Login failed: Email not verified',
+      );
+      throw new ForbiddenException('Please verify your email to log in.');
+    }
+
     this.httpContext.setActor(user);
 
     // Reset failed attemps on sucessful login

@@ -38,6 +38,7 @@ model User {
   roles           Role[]
   activityLogs    ActivityLog[]
   hashedPassword String?
+  isEmailVerified Boolean @default(false)
   refreshTokens  RefreshToken[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt

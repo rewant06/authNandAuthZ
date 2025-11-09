@@ -178,6 +178,7 @@ export class UsersService {
         name: true,
         email: true,
         hashedPassword: true,
+        isEmailVerified: true,
 
         roles: {
           select: {
@@ -234,7 +235,11 @@ export class UsersService {
     }
   }
 
-  async updateUserById(userId: string, dto: AdminUpdateUserDto) {
+  async updateUserById(
+    userId: string,
+    actor: UserPayload,
+    dto: AdminUpdateUserDto,
+  ) {
     this.logger.log(`Admin is attempting to update user: ${userId}`);
 
     try {
@@ -281,17 +286,20 @@ export class UsersService {
       );
       return updatedUser;
     } catch (error) {
-      if (error.code === 'p2025') {
-        this.logger.warn(
-          `Admin update failed: User not found: ${userId}`,
-          error.stack,
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          this.logger.warn(
+            `Admin update failed: User not found: ${userId}`,
+            error.stack,
+          );
+        }
+
         throw new NotFoundException('User not found');
       }
     }
   }
 
-  async deleteUserById(userId: string): Promise<void> {
+  async deleteUserById(userId: string, actor: UserPayload): Promise<void> {
     this.logger.log(`Admin is attempting to delete user: ${userId}`);
 
     try {

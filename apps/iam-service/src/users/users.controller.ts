@@ -7,7 +7,6 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  ParseUUIDPipe,
   Get,
   Query,
 } from '@nestjs/common';
@@ -48,10 +47,14 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async updateUser(
     @User() actor: UserPayload,
-    @Param('id', ParseUUIDPipe) userId: string,
+    @Param('id') userId: string,
     @Body() dto: AdminUpdateUserDto,
   ) {
-    const updatedUser = await this.usersService.updateUserById(userId, dto);
+    const updatedUser = await this.usersService.updateUserById(
+      userId,
+      actor,
+      dto,
+    );
     return { user: updatedUser };
   }
   // ADMIN: Delete User
@@ -59,11 +62,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermission([PermissionAction.DELETE, 'User'])
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(
-    @User() actor: UserPayload,
-    @Param('id', ParseUUIDPipe) userId: string,
-  ) {
-    await this.usersService.deleteUserById(userId);
+  async deleteUser(@User() actor: UserPayload, @Param('id') userId: string) {
+    await this.usersService.deleteUserById(userId, actor);
     return;
   }
 

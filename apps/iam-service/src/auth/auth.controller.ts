@@ -42,7 +42,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async register(@Body() dto: CreateLocalUserDto) {
     try {
-      const newUser = await this.usersService.createLocalUser(dto);
+      const newUser = await this.authService.register(dto);
       return { newUser };
     } catch (err) {
       if (err instanceof ConflictException) throw err;
