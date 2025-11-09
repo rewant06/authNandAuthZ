@@ -11,21 +11,30 @@ import { RbacService } from './rbac/rbac.service';
 import { PermissionsGuard } from './rbac/permissions.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { QueuesModule } from 'src/queues/queues.module';
-
-const privateKey = loadPrivateKey();
-const publicKey = loadPublicKey();
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     forwardRef(() => UsersModule),
     RedisModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      privateKey,
-      publicKey,
-      signOptions: {
-        algorithm: 'RS256',
-        expiresIn: 900,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const expiresInSeconds = configService.get<number>(
+          'ACCESS_TOKEN_EXPIRES_IN_SECONDS',
+        );
+
+        const expiresIn = expiresInSeconds || 900;
+        return {
+          privateKey: loadPrivateKey(),
+          publicKey: loadPublicKey(),
+          signOptions: {
+            algorithm: 'RS256',
+            expiresIn: expiresIn,
+          },
+        };
       },
     }),
     QueuesModule,
