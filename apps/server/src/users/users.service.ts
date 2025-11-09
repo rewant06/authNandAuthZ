@@ -8,7 +8,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/iam-client';
 import argon2 from 'argon2';
 import { CreateLocalUserDto } from './dto/createUser.dto';
 import { RbacService } from 'src/auth/rbac/rbac.service';

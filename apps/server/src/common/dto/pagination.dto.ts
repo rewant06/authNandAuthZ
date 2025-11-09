@@ -1,9 +1,9 @@
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
-import { Type } from 'class-transformer'; // <-- Make sure to run 'npm i class-transformer'
+import { Type } from 'class-transformer';
 
 export class PaginationDto {
   @IsOptional()
-  @Type(() => Number) // Transform query param string to number
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
@@ -12,6 +12,6 @@ export class PaginationDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100) // Don't let users request 1,000,000 items
+  @Max(100)
   limit?: number = 20;
 }

@@ -1,7 +1,7 @@
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/posting-client"
 }
 
 datasource db {
@@ -16,7 +16,7 @@ model Post {
   updatedAt DateTime @updatedAt
 
   // The true identity (for ownership/moderation)
-  userId    String   @db.Uuid()
+  userId    String   
 
   // The persona fields
   isAnonymous     Boolean @default(true)

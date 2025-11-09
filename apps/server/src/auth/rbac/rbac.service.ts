@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisService } from 'src/redis/redis.service';
-import { Permission, PermissionAction, Role } from '@prisma/client';
+import { Permission, PermissionAction, Role } from '@prisma/iam-client';
 
 // Cache user permissions for 15 minutes
 const CACHE_TTL = 15 * 60;

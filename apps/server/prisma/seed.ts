@@ -1,6 +1,6 @@
 // prisma/seed.ts
 
-import { PrismaClient, PermissionAction } from '@prisma/client';
+import { PrismaClient, PermissionAction } from '@prisma/iam-client';
 
 const prisma = new PrismaClient();
 

@@ -9,7 +9,7 @@ import {
 import {
   PrismaClient,
   ActivityLogActionType,
-} from '@prisma/client';
+} from '@prisma/iam-client';
 import { ActivityLogService } from 'src/activity-log/activity-log.service';
 
 @Injectable()

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpContextService } from './http-context.service';
-import { ActivityLogActionType, ActivityLogStatus } from '@prisma/client';
+import { ActivityLogActionType, ActivityLogStatus } from '@prisma/iam-client';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
