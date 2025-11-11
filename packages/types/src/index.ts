@@ -7,6 +7,7 @@ export interface User {
   roles: string[];
   permissions: string[];
   createdAt: string;
+  isEmailVerified?: boolean;
 }
 
 // --- Auth Payloads ---

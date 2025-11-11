@@ -7,7 +7,6 @@ import { z } from "zod";
 
 import { registerSchema } from "@/lib/validators/auth.schema";
 import { registerUser } from "@/lib/auth.service";
-import { error } from "console";
 
 type RegisterFormInputs = z.infer<typeof registerSchema>;
 

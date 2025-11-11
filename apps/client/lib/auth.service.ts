@@ -32,6 +32,10 @@ export const refreshAccessToken = async () => {
   return data;
 };
 
+export const logoutUser = () => {
+  return api.post<void>('/auth/logout');
+}
+
 export const getSelf = async () => {
   const { data } = await api.get<User>("/auth/me");
   return data;

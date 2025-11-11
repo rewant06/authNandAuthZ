@@ -9,7 +9,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [process.env.FrontedUrl];
+      const allowedOrigins = [process.env.FRONTEND_URL];
 
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -31,6 +31,6 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 8000);
 }
 bootstrap();
