@@ -9,8 +9,7 @@ import { z } from "zod";
 import { loginSchema } from "@/lib/validators/auth.schema";
 import { useAuthStore } from "@/store/auth.store";
 import { logger } from "@/lib/logger";
-import { isAxiosError } from "node_modules/axios/index.cjs";
-import { log } from "console";
+import { isAxiosError } from "axios";
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 

@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
+import { logger } from "@/lib/logger";
 
 export default function ProctectedLayout({
   children,
@@ -14,26 +15,14 @@ export default function ProctectedLayout({
 
   useEffect(() => {
     if (!isAuthenticated) {
+      logger.warn(
+        "Unauthenticated user access attempt to protected route. Redirecting."
+      );
       router.replace("/login");
     }
   }, [isAuthenticated, router]);
   if (!isAuthenticated) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <p> Loading session...</p>
-      </div>
-    );
+    return null;
   }
-  return (
-    <>
-      <main>{children}</main>
-    </>
-  );
+  return <>{children}</>;
 }

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { registerSchema } from "@/lib/validators/auth.schema";
 import { registerUser } from "@/lib/auth.service";
 import { logger } from "@/lib/logger";
-import { isAxiosError } from "node_modules/axios/index.cjs";
+import { isAxiosError } from 'axios';
 
 type RegisterFormInputs = z.infer<typeof registerSchema>;
 

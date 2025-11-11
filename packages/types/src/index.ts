@@ -35,6 +35,7 @@ export interface RefreshResponse {
 
 export interface JwtPayload {
   sub: string; // User ID
+  name: string
   jti: string;
   roles: string[];
   permissions: string[];
