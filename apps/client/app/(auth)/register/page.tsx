@@ -7,6 +7,8 @@ import { z } from "zod";
 
 import { registerSchema } from "@/lib/validators/auth.schema";
 import { registerUser } from "@/lib/auth.service";
+import { logger } from "@/lib/logger";
+import { isAxiosError } from "node_modules/axios/index.cjs";
 
 type RegisterFormInputs = z.infer<typeof registerSchema>;
 
@@ -27,11 +29,16 @@ export default function RegisterPage() {
     setIsSuccess(false);
     try {
       await registerUser(data);
+      logger.log('Registration successful.');
       setIsSuccess(true);
-    } catch (error: any) {
-      console.error(error);
-      const errorMsg =
-        error.response?.data?.message || "An unknown error occured.";
+    } catch (error: unknown) {
+      let errorMsg = 'An unknown error occurred.';
+      if(isAxiosError(error)){
+        errorMsg = error.response?.data?.message || error.message;
+      } else if (error instanceof Error) {
+        errorMsg = error.message;
+      }
+      logger.error('Registration failed', error);
       setApiError(errorMsg);
     }
   };

@@ -3,11 +3,14 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { loginSchema } from "@/lib/validators/auth.schema";
 import { useAuthStore } from "@/store/auth.store";
+import { logger } from "@/lib/logger";
+import { isAxiosError } from "node_modules/axios/index.cjs";
+import { log } from "console";
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
@@ -29,11 +32,16 @@ export default function LoginPage() {
     setApiError(null);
     try {
       await login(data);
+      logger.log("Login successful, redirecting to dashboard...");
       router.push("/dashboard");
-    } catch (error: any) {
-      console.log(error);
-      const errorMsg =
-        error.response?.data?.message || "An unknown error occurred.";
+    } catch (error: unknown) {
+      let errorMsg = "An unknown error occured";
+      if (isAxiosError(error)) {
+        errorMsg = error.response?.data?.message || error.message;
+      } else if (error instanceof Error) {
+        errorMsg = error.message;
+      }
+      logger.error("Login failed", error);
       setApiError(errorMsg);
     }
   };

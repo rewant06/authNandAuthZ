@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { jwtDecode } from "jwt-decode";
 import { loginUser, logoutUser } from "@/lib/auth.service";
 import { User, LoginPayload, JwtPayload } from "@iam-project/types";
+import { logger } from "@/lib/logger";
 
 interface AuthState {
   accessToken: string | null;
@@ -16,7 +17,7 @@ interface AuthState {
 
 const clearState = (set: any) => {
   set({ accessToken: null, user: null, isAuthenticated: false });
-  console.log("User logged out and state cleared");
+  logger.log("User logged out and state cleared");
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -29,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials: LoginPayload) => {
         const { accessToken, user } = await loginUser(credentials);
         const payload: JwtPayload = jwtDecode(accessToken);
-        console.log("Decode JWT Payload: ", payload);
+        logger.log("Decode JWT Payload: ", payload);
 
         set({
           accessToken,
@@ -41,8 +42,9 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await logoutUser();
+          logger.log("Server logout successful.");
         } catch (error) {
-          console.error(
+          logger.error(
             "Logout API call failed, but logging out locally.",
             error
           );
@@ -53,10 +55,11 @@ export const useAuthStore = create<AuthState>()(
 
       setToken: (token: string) => {
         set({ accessToken: token });
+        logger.log("Access token has been set");
       },
 
       _hydrate: () => {
-        console.log("AuthStore hydrated from localStorage");
+        logger.log("AuthStore hydrated from localStorage");
       },
     }),
     {
