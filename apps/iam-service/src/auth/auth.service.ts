@@ -25,6 +25,9 @@ import { ForgotPassword } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { loadPublicKey } from 'src/common/keys';
 import { CreateLocalUserDto } from './dto/createUser.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { RefreshToken } from '@prisma/iam-client';
+import type { Request } from 'express';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_SECONDS = 1 * 60 * 60;
@@ -66,7 +69,7 @@ export class AuthService {
       jti: randomBytes(16).toString('hex'),
       aud: 'verify-email',
     };
-    return this.jwtService.signAsync(payload);
+    return this.jwtService.signAsync(payload, { expiresIn: '24h' });
   }
 
   async register(dto: CreateLocalUserDto) {
@@ -91,6 +94,87 @@ export class AuthService {
         error.stack,
       );
     }
+    return newUser;
+  }
+
+  async verifyEmail(dto: VerifyEmailDto): Promise<void> {
+    const { token } = dto;
+    let payload: { sub: string; jti: string; aud: string; exp: number };
+
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: loadPublicKey(),
+        algorithms: ['RS256'],
+        audience: 'verify-email',
+      });
+    } catch (error) {
+      this.logger.warn(`Email verification failed: Invalid or expired token.`);
+      const reason = error instanceof Error ? error.message : String(error);
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'Authentication',
+        null,
+        { action: 'email-verify-attmpt' },
+        `Invalid or expired token: ${reason}`,
+      );
+      throw new BadRequestException('Invalid or expired token.');
+    }
+
+    const { jti, sub: userId, exp } = payload;
+    const isDenied = await this.redisService.get(`denylist:jti:${jti}`);
+
+    if (isDenied) {
+      this.logger.warn(`Email verification failed: Token already used: ${jti}`);
+      await this.activityLogService.createLog(
+        'EXECUTE',
+        'FAILED',
+        'User',
+        userId,
+        { action: 'email-verify-attempt', jti },
+        'Token has already be used',
+      );
+
+      throw new BadRequestException('Token has already been used');
+    }
+
+    let user: UserPayload;
+    try {
+      user = await this.prisma.user.update({
+        where: { id: userId, isEmailVerified: false },
+        data: { isEmailVerified: true, updatedAt: new Date() },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          roles: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+      this.logger.warn(`Email verified successfully for: ${user.email}`);
+    } catch (error) {
+      this.logger.warn(
+        `Email verification successfully for: ${userId}. Maybe already verified?`,
+        error.stack,
+      );
+      throw new BadRequestException('Invalid token or user already verified');
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = exp - now;
+    if (ttl > 0) {
+      await this.redisService.set(`denylist:jti:${jti}`, '1', ttl);
+    }
+    await this.activityLogService.createLog(
+      'UPDATE',
+      'SUCCESS',
+      'User',
+      userId,
+      { action: 'email-verify-success' },
+    );
   }
 
   async validateLocalUser(dto: LoginDto) {
@@ -175,7 +259,7 @@ export class AuthService {
     return safeUser;
   }
 
-  private async signAccessToken(user: any): Promise<string> {
+  private async signAccessToken(user: UserPayload): Promise<string> {
     const userPermissions = await this.rbacService.getPermissionsForUser(
       user.id,
     );
@@ -222,7 +306,7 @@ export class AuthService {
   }
 
   async generateTokensForUser(
-    user: any,
+    user: UserPayload,
     device?: DeviceInfo,
   ): Promise<AuthTokens> {
     try {
@@ -291,7 +375,7 @@ export class AuthService {
     }
   }
 
-  private async handlePossibleReuse(storedToken: any) {
+  private async handlePossibleReuse(storedToken: RefreshToken) {
     await this.activityLogService.createLog(
       'EXECUTE',
       'FAILED',
@@ -404,6 +488,16 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { id: storedToken.userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          roles: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
       if (!user)
         throw new InternalServerErrorException('User not found during refresh');
@@ -463,9 +557,14 @@ export class AuthService {
     if (accessToken) {
       try {
         const payload = await this.jwtService.decode(accessToken);
-        if (payload && payload.jti && payload.exp) {
-          const jti = payload.jti;
-          const exp = payload.exp;
+        if (
+          payload &&
+          typeof payload === 'object' &&
+          'jti' in payload &&
+          'exp' in payload
+        ) {
+          const jti = payload.jti as string;
+          const exp = payload.exp as number;
           const now = Math.floor(Date.now() / 1000);
           const ttl = exp - now;
 
@@ -473,21 +572,19 @@ export class AuthService {
             await this.redisService.set(`denylist:jti:${jti}`, '1', ttl);
           }
         }
-      } catch (e) {
-        this.logger.warn(
-          'Failed to denylist access token on logout',
-          e.message,
-        );
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        this.logger.warn('Failed to denylist access token on logout', reason);
       }
     }
   }
 
   async logRevokeFailure(
-    err: any,
+    error: any,
     actor: UserPayload,
     token: string | undefined,
   ) {
-    const reason = err instanceof Error ? err.message : String(err);
+    const reason = error instanceof Error ? error.message : String(error);
     this.logger.warn(`User ${actor.email} failed to logout: ${reason}`);
     await this.activityLogService.createLog(
       'EXECUTE',
@@ -499,12 +596,12 @@ export class AuthService {
     );
   }
 
-  extractDeviceInfo(req: any): DeviceInfo {
+  extractDeviceInfo(req: Request): DeviceInfo {
     const userAgent = req.headers?.['user-agent'] ?? null;
     const ip =
       (req.headers &&
         (req.headers['x-forwarded-for'] ?? req.socket?.remoteAddress)) ||
-      req.ip ||
+      (req as any).ip ||
       null;
     // Optionally parse user-agent to friendly name (use ua-parser-js or similar in production)
     return { userAgent: String(userAgent ?? ''), ip: String(ip ?? '') };

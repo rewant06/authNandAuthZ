@@ -28,6 +28,7 @@ import { User } from './decorator/user.decorator';
 import type { UserPayload } from './types/user-payload.type';
 import { ForgotPassword } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 
@@ -88,12 +89,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const cookie = req.cookies?.[REFRESH_COOKIE_NAME];
-    if (!cookie) {
-      throw new UnauthorizedException('Refresh token missing');
+    if (!cookie || typeof cookie !== 'string') {
+      throw new UnauthorizedException('Refresh token missing or malformed');
     }
 
     const device = parseDeviceInfo(req);
-
     // AuthService.refreshTokens should return { accessToken, refreshToken }
     const { accessToken, refreshToken } = await this.authService.refreshTokens(
       cookie,
@@ -124,13 +124,15 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
+    const validRefreshToken =
+      typeof refreshToken === 'string' ? refreshToken : undefined;
     const authHeader = req.headers?.['authorization'];
     const accessToken = authHeader ? authHeader.split(' ')[1] : undefined;
 
     try {
-      await this.authService.logout(refreshToken, accessToken, actor);
-    } catch (err) {
-      this.authService.logRevokeFailure(err, actor, refreshToken);
+      await this.authService.logout(validRefreshToken, accessToken, actor);
+    } catch (error) {
+      void this.authService.logRevokeFailure(error, actor, validRefreshToken);
     }
 
     res.clearCookie(REFRESH_COOKIE_NAME, {
@@ -158,7 +160,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermission([PermissionAction.READ, 'UserSelf'])
   @HttpCode(HttpStatus.OK)
-  async getMe(@User() user: UserPayload) {
+  getMe(@User() user: UserPayload) {
     return { user: user };
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    await this.authService.verifyEmail(dto);
   }
 }
