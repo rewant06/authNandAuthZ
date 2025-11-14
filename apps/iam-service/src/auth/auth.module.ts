@@ -21,7 +21,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
+      useFactory: (configService: ConfigService) => {
         const expiresInSeconds = configService.get<number>(
           'ACCESS_TOKEN_EXPIRES_IN_SECONDS',
         );

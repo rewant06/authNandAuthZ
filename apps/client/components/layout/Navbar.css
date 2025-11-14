@@ -4,7 +4,7 @@
     align-items: center;
     padding: 1rem 2rem;
     background-color: #fff;
-    border-bottom: 1px solid #eaeaea;
+    border-bottom: 1px solid #d40101;
     font-family: sans-serif;
 }
 
@@ -14,6 +14,7 @@
     display: flex;
     align-items: center;
     gap: 1.5rem;
+    color: black
 }
 
 .navbar-brand {
@@ -25,7 +26,7 @@
 
 .navbar.link {
 text-decoration: none;
-color: #333;
+color: #110404;
 font-size: 0.95rem;
 }
 
@@ -41,5 +42,5 @@ font-size: 0.95rem;
 }
 
 .navbar-button:hover {
-    background-color: #333;
+    background-color: #0f0707;
 }

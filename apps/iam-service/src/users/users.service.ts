@@ -72,6 +72,7 @@ export class UsersService {
   async createLocalUser(dto: CreateLocalUserDto) {
     const finalEmail = dto.email.trim().toLowerCase();
     const finalName = dto.name?.trim();
+    const hashPassword = await this.hashPassword(dto.password);
 
     try {
       const newUser = await this.prisma.$transaction(
@@ -85,7 +86,7 @@ export class UsersService {
             );
           }
 
-          const hashPassword = await this.hashPassword(dto.password);
+          // const hashPassword = await this.hashPassword(dto.password);
           const newUser = await tx.user.create({
             data: {
               name: finalName,
@@ -100,7 +101,12 @@ export class UsersService {
               id: true,
               name: true,
               email: true,
-              roles: true,
+              isEmailVerified: true,
+              roles: {
+                select: {
+                  name: true,
+                },
+              },
               createdAt: true,
               updatedAt: true,
             },
@@ -141,6 +147,7 @@ export class UsersService {
             id: true,
             name: true,
             email: true,
+            isEmailVerified: true,
             roles: {
               select: {
                 name: true,

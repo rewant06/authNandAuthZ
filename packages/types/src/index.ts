@@ -1,13 +1,53 @@
+
+// --- Pagination Types ---
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  lastPage: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
 // --- User Types ---
+
+export interface Role {
+  name: string;
+}
 
 export interface User {
   id: string;
   email: string;
   name: string | null;
-  roles: string[];
+  roles: Role[];
   permissions: string[];
   createdAt: string;
   isEmailVerified?: boolean;
+}
+
+// --- Activity Log Types ---
+export interface ActivityLogActorSnapshot {
+  email: string;
+  roles: { name: string }[];
+}
+
+export interface ActivityLog {
+  id: string;
+  actorId: string | null;
+  actorSnapshot: ActivityLogActorSnapshot | null;
+  actionType: string;
+  status: string;
+  entityType: string;
+  entityId: string | null;
+  changes: unknown;
+  context: unknown;
+  createdAt: string;
+  failureReason: string | null;
 }
 
 // --- Auth Payloads ---
@@ -35,7 +75,7 @@ export interface RefreshResponse {
 
 export interface JwtPayload {
   sub: string; // User ID
-  name: string
+  name: string;
   jti: string;
   roles: string[];
   permissions: string[];
@@ -58,6 +98,6 @@ export interface ResetPasswordPayload {
 
 export interface UpdateProfilePayload {
   name?: string;
-  // Add other updatable fields here, e.g., avatarUrl
+
 }
 

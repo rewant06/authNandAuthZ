@@ -16,7 +16,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
-    if (token) {
+    if (token && config.url !== "/auth/refresh") {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
     return config;
@@ -87,9 +87,13 @@ api.interceptors.response.use(
         originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
         processQueue(null, accessToken);
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: unknown) {
+        logger.error(
+          "Token refresh failed. Clearing client state.",
+          refreshError
+        );
         processQueue(refreshError, null);
-        useAuthStore.getState().logout();
+        useAuthStore.getState().clearAuth();
         window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {

@@ -10,8 +10,9 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   login: (credentials: LoginPayload) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setToken: (token: string) => void;
+  clearAuth: () => void;
   _hydrate: () => void;
 }
 
@@ -43,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           await logoutUser();
           logger.log("Server logout successful.");
-        } catch (error) {
+        } catch (error: unknown) {
           logger.error(
             "Logout API call failed, but logging out locally.",
             error
@@ -51,6 +52,10 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           clearState(set);
         }
+      },
+      
+      clearAuth:() => {
+        clearState(set);
       },
 
       setToken: (token: string) => {

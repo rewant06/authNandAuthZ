@@ -1,12 +1,12 @@
 const isProd = process.env.NODE_ENV === "production";
 
-const log = (...args: any[]) => {
+const log = (...args: unknown[]) => {
   if (!isProd) {
     console.log("[INFO]", ...args);
   }
 };
 
-const warn = (...args: any[]) => {
+const warn = (...args: unknown[]) => {
   console.warn("[WARN]", ...args);
 };
 

@@ -1,10 +1,44 @@
+export interface PaginationMeta {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    lastPage: boolean;
+}
+export interface PaginatedResponse<T> {
+    data: T[];
+    meta: PaginationMeta;
+}
+export interface Role {
+    name: string;
+}
 export interface User {
     id: string;
     email: string;
     name: string | null;
-    roles: string[];
+    roles: Role[];
     permissions: string[];
     createdAt: string;
+    isEmailVerified?: boolean;
+}
+export interface ActivityLogActorSnapshot {
+    email: string;
+    roles: {
+        name: string;
+    }[];
+}
+export interface ActivityLog {
+    id: string;
+    actorId: string | null;
+    actorSnapshot: ActivityLogActorSnapshot | null;
+    actionType: string;
+    status: string;
+    entityType: string;
+    entityId: string | null;
+    changes: unknown;
+    context: unknown;
+    createdAt: string;
+    failureReason: string | null;
 }
 export type RegisterPayload = Pick<User, 'email' | 'name'> & {
     password: string;
@@ -21,6 +55,7 @@ export interface RefreshResponse {
 }
 export interface JwtPayload {
     sub: string;
+    name: string;
     jti: string;
     roles: string[];
     permissions: string[];

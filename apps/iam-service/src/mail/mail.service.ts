@@ -28,7 +28,7 @@ export class MailService {
     const resetUrl = `${this.frontendUrl}/auth/reset-password?token=${token}`;
 
     const mailOptions = {
-      from: `"My App"< ${this.from}>`,
+      from: `"HelpingBots"< ${this.from}>`,
       to: email,
       subject: 'Your Password Reset Request',
       text: `Click the link to reset your password: ${resetUrl}`,
@@ -49,7 +49,7 @@ export class MailService {
     const verifyUrl = `${this.frontendUrl}/auth/verify-email?token=${token}`;
 
     const mailOptions = {
-      from: `"My App" <${this.from}>`,
+      from: `"HelpingBots" <${this.from}>`,
       to: email,
       subject: 'Welcome! Please Verify Your Email',
       text: `Welcome! Click this link to verify your email address: ${verifyUrl}`,
