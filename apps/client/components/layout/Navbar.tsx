@@ -24,15 +24,18 @@ export function Navbar() {
           HelpingBots
         </Link>
         <div className="navbar-links">
-          <Link href="/dashboard" className="navbar-link">
-            Dashboard
-          </Link>
+          {isAuthenticated && (
+            <Link href="/dashboard" className="navbar-link">
+              Dashboard
+            </Link>
+          )}
+
           {canSeeAdminPanel && (
             <Link href="/admin/users" className="navbar-link">
               Admin Panel
             </Link>
           )}
-                    {canSeeAdminPanel && (
+          {canSeeAdminPanel && (
             <Link href="/admin/activity-log" className="navbar-link">
               Activity Logs
             </Link>

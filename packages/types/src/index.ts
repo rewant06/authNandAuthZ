@@ -36,6 +36,14 @@ export interface ActivityLogActorSnapshot {
   roles: { name: string }[];
 }
 
+export interface ActivityLogContext {
+  ip?: string;
+  userAgent?: string;
+  [key: string]: unknown; // Allow other context properties
+}
+
+export type ActivityLogChanges = Record<string, any>;
+
 export interface ActivityLog {
   id: string;
   actorId: string | null;
@@ -44,8 +52,8 @@ export interface ActivityLog {
   status: string;
   entityType: string;
   entityId: string | null;
-  changes: unknown;
-  context: unknown;
+  changes: ActivityLogContext | null;
+  context: ActivityLogContext | null;
   createdAt: string;
   failureReason: string | null;
 }
