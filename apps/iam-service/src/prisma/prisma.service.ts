@@ -6,10 +6,7 @@ import {
   forwardRef,
   Inject,
 } from '@nestjs/common';
-import {
-  PrismaClient,
-  ActivityLogActionType,
-} from '@prisma/iam-client';
+import { PrismaClient, ActivityLogActionType } from '@prisma/iam-client';
 import { ActivityLogService } from 'src/activity-log/activity-log.service';
 
 @Injectable()

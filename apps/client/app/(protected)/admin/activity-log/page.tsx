@@ -66,7 +66,7 @@ const StatusBadge = ({
     fontSize: "0.8rem",
     fontWeight: "bold",
     color: "#fff",
-    backgroundColor: isSuccess ? "#28a745" : "#dc3545", 
+    backgroundColor: isSuccess ? "#28a745" : "#dc3545",
   };
 
   return (

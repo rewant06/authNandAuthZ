@@ -34,7 +34,7 @@ export class MailService {
       text: `Click the link to reset your password: ${resetUrl}`,
       html: `<p> Hi There,</p>
         <p>Click this link to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl} </a>`,
+        <a href="${resetUrl}"> confirm reset </a>`,
     };
     try {
       const info = await this.transporter.sendMail(mailOptions);
@@ -53,7 +53,7 @@ export class MailService {
       to: email,
       subject: 'Welcome! Please Verify Your Email',
       text: `Welcome! Click this link to verify your email address: ${verifyUrl}`,
-      html: `<p>Welcome!</p><p>Click this link to verify your email address:</p><a href="${verifyUrl}">${verifyUrl}</a>`,
+      html: `<p>Welcome!</p><p>Click this link to verify your email address:</p><a href="${verifyUrl}">confirm verification</a>`,
     };
 
     try {
