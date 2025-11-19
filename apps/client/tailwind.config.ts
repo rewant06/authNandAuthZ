@@ -1,8 +1,14 @@
 import type { Config } from "tailwindcss";
+import tailwindAnimate from "tailwindcss-animate";
 
 export default {
-  darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  darkMode: "class",
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -74,41 +80,41 @@ export default {
         },
         "fade-in": {
           "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" }
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "fade-in-up": {
           "0%": { opacity: "0", transform: "translateY(30px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" }
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "scale-in": {
           "0%": { transform: "scale(0.95)", opacity: "0" },
-          "100%": { transform: "scale(1)", opacity: "1" }
+          "100%": { transform: "scale(1)", opacity: "1" },
         },
         "slide-in-right": {
           "0%": { transform: "translateX(100%)" },
-          "100%": { transform: "translateX(0)" }
+          "100%": { transform: "translateX(0)" },
         },
-        "float": {
+        float: {
           "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-20px)" }
+          "50%": { transform: "translateY(-20px)" },
         },
-        "glow": {
+        glow: {
           "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" }
+          "50%": { opacity: "0.5" },
         },
         "bounce-slow": {
           "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" }
+          "50%": { transform: "translateY(-10px)" },
         },
-        "shimmer": {
+        shimmer: {
           "0%": { backgroundPosition: "-200% center" },
-          "100%": { backgroundPosition: "200% center" }
+          "100%": { backgroundPosition: "200% center" },
         },
-        "tilt": {
+        tilt: {
           "0%, 100%": { transform: "rotate(0deg)" },
           "25%": { transform: "rotate(1deg)" },
-          "75%": { transform: "rotate(-1deg)" }
-        }
+          "75%": { transform: "rotate(-1deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -117,16 +123,16 @@ export default {
         "fade-in-up": "fade-in-up 0.6s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
-        "float": "float 3s ease-in-out infinite",
-        "glow": "glow 2s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
+        glow: "glow 2s ease-in-out infinite",
         "bounce-slow": "bounce-slow 2s ease-in-out infinite",
-        "shimmer": "shimmer 3s linear infinite",
-        "tilt": "tilt 10s ease-in-out infinite"
+        shimmer: "shimmer 3s linear infinite",
+        tilt: "tilt 10s ease-in-out infinite",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindAnimate],
 } satisfies Config;

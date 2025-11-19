@@ -96,63 +96,8 @@
   }
 }
 
-/* ---------- Theme tokens in H S% L% format (used by Tailwind config) ---------- */
-:root {
-  /* background and foreground in H S% L% (used by `hsl(var(--background))`) */        /* white */      /* dark text ~ #171717 */
 
-  /* core color tokens (primary, accent etc) — H S% L% */
-  --primary: oklch(0.216 0.006 56.043);
-  --primary-foreground: oklch(0.985 0.001 106.423);
-  --accent: oklch(0.97 0.001 106.424);
-  --accent-foreground: oklch(0.216 0.006 56.043);
 
-  /* other sensible defaults (as H S% L% where used) */
-  --border: oklch(0.923 0.003 48.717);
-  --muted: oklch(0.97 0.001 106.424);
-  --muted-foreground: oklch(0.553 0.013 58.071);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.25);
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.25);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.25);
-  --secondary: oklch(0.97 0.001 106.424);
-  --secondary-foreground: oklch(0.216 0.006 56.043);
-  --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.923 0.003 48.717);
-  --ring: oklch(0.709 0.01 56.259);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0.001 106.423);
-  --sidebar-foreground: oklch(0.147 0.004 49.25);
-  --sidebar-primary: oklch(0.216 0.006 56.043);
-  --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-accent: oklch(0.97 0.001 106.424);
-  --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(0.923 0.003 48.717);
-  --sidebar-ring: oklch(0.709 0.01 56.259);
-}
-
-/* Dark-mode overrides (also H S% L%) */
-@media (prefers-color-scheme: dark) {
-  :root {      /* near-black */     /* near-white */
-
-    --primary: 239 82% 70%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 320 85% 66%;
-    --accent-foreground: 0 0% 100%;
-
-    --border: 220 10% 18%;
-    --muted: 220 10% 12%;
-    --muted-foreground: 220 10% 70%;
-    --card: 210 10% 8%;
-    --card-foreground: 210 10% 96%;
-  }
-}
 
 /* ---------- compatibility inline theme (your previous block) ---------- */
 @theme inline {
@@ -221,5 +166,33 @@ body {
   }
     html {
     scroll-behavior: smooth;
+  }
+}
+
+
+@layer utilities {
+  .glass-effect {
+    @apply bg-background/60 backdrop-blur-xl border border-border/50;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-2;
+    box-shadow: 0 20px 60px -15px hsl(var(--primary) / 0.4);
+  }
+  
+  .shadow-elevated {
+    box-shadow: 0 20px 60px -15px hsl(var(--primary) / 0.4);
+  }
+  
+  .animate-on-scroll {
+    @apply opacity-0 translate-y-10 transition-all duration-700;
+  }
+  
+  .animate-on-scroll.is-visible {
+    @apply opacity-100 translate-y-0;
   }
 }

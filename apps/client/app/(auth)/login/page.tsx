@@ -54,7 +54,9 @@ export default function LoginPage() {
 
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-12">
+
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="glass-effect p-8 rounded-2x1">
           <h1 className="text-3x1 font-bold text-gradient mb-2">
@@ -104,5 +106,8 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+
+    </div>
+    
   );
 }

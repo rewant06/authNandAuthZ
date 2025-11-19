@@ -1,39 +1,45 @@
-// apps/client/components/Hero.tsx
+// components/Hero.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Zap, Shield, Rocket } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-
+// remove react-router Link import if not used (you used <a> anchors)
 type Particle = {
-  left: string;
-  top: string;
-  animationDelay: string;
-  animationDuration: string;
-  size?: string;
-};
-
-const generateParticle = (): Particle => {
-  const left = `${(Math.random() * 100).toFixed(6)}%`;
-  const top = `${(Math.random() * 100).toFixed(6)}%`;
-  const animationDelay = `${(Math.random() * 2.5).toFixed(3)}s`;
-  const animationDuration = `${(3 + Math.random() * 4).toFixed(3)}s`; // 3s - 7s
-  const sizePx = (2 + Math.random() * 6).toFixed(1); // 2 - 8 px
-  return { left, top, animationDelay, animationDuration, size: `${sizePx}px` };
+  left: string; // e.g. "23.45%"
+  top: string;  // e.g. "84.12%"
+  animationDelay: string; // "1.23s"
+  animationDuration: string; // "5.12s"
+  id: number;
 };
 
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false);
-  // particles generated only on client to avoid SSR mismatch
+
+  // mounted indicates client-only rendering is allowed
+  const [mounted, setMounted] = useState(false);
+
+  // store generated particles in state so they're generated only on client
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
     setIsVisible(true);
 
-    // generate particles on client only
-    const p: Particle[] = Array.from({ length: 20 }).map(() => generateParticle());
-    setParticles(p);
+    // mark mounted so we know client has taken over
+    setMounted(true);
+
+    // generate particles client-side only
+    const count = 20;
+    const generated: Particle[] = Array.from({ length: count }).map((_, i) => {
+      const left = `${(Math.random() * 100).toFixed(6)}%`;
+      const top = `${(Math.random() * 100).toFixed(6)}%`;
+      const animationDelay = `${(Math.random() * 3).toFixed(9)}s`;
+      const animationDuration = `${(3 + Math.random() * 4).toFixed(12)}s`;
+      return { left, top, animationDelay, animationDuration, id: i };
+    });
+
+    // set after generation (this happens in useEffect so only on client)
+    setParticles(generated);
   }, []);
 
   return (
@@ -47,28 +53,8 @@ const Hero = () => {
         }}
       />
 
-      {/* Small randomized particles (client-only) */}
+      {/* Animated orbs (static markup ok for SSR) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {particles.map((particle, i) => (
-          <div
-            key={i}
-            className="absolute bg-primary/30 rounded-full animate-float"
-            style={{
-              left: particle.left,
-              top: particle.top,
-              width: particle.size,
-              height: particle.size,
-              animationDelay: particle.animationDelay,
-              animationDuration: particle.animationDuration,
-              transform: "translate(-50%, -50%)",
-            }}
-            aria-hidden
-          />
-        ))}
-      </div>
-
-      {/* Large deterministic orbs */}
-      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl animate-float" />
         <div
           className="absolute top-1/3 -right-20 w-96 h-96 bg-accent/30 rounded-full blur-3xl animate-float"
@@ -78,6 +64,23 @@ const Hero = () => {
           className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-float"
           style={{ animationDelay: "2s" }}
         />
+      </div>
+
+      {/* Floating particles — render them only after client mount to avoid SSR mismatch */}
+      <div className="absolute inset-0 pointer-events-none">
+        {mounted &&
+          particles.map((p) => (
+            <div
+              key={p.id}
+              className="absolute w-1 h-1 bg-primary/30 rounded-full animate-float"
+              style={{
+                left: p.left,
+                top: p.top,
+                animationDelay: p.animationDelay,
+                animationDuration: p.animationDuration,
+              }}
+            />
+          ))}
       </div>
 
       <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
@@ -114,8 +117,7 @@ const Hero = () => {
             }`}
           >
             Transform your boldest ideas into stunning reality with our comprehensive suite of{" "}
-            <span className="text-primary font-semibold">completely free</span> development and design
-            services.
+            <span className="text-primary font-semibold"> completely free</span> development and design services.
           </p>
 
           {/* CTA Buttons */}
@@ -129,10 +131,10 @@ const Hero = () => {
               size="lg"
               className="bg-gradient-to-r from-primary via-accent to-primary text-white hover:opacity-90 transition-all text-base md:text-lg px-8 py-6 rounded-full shadow-lg shadow-elevated hover:scale-105 group bg-[length:200%_auto] animate-shimmer"
             >
-              <Link href="/get-started" aria-label="Start your project free">
+              <a href="/get-started">
                 Start Your Project Free
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </a>
             </Button>
 
             <Button
@@ -141,14 +143,59 @@ const Hero = () => {
               variant="outline"
               className="glass-effect hover:bg-primary/10 text-base md:text-lg px-8 py-6 rounded-full border-2 hover:border-primary/50 transition-all group"
             >
-              <Link href="/services" aria-label="Explore services">
+              <a href="/services">
                 Explore Services
                 <Sparkles className="ml-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-              </Link>
+              </a>
             </Button>
           </div>
 
-          {/* ... Feature cards / rest of hero (keep your existing markup) ... */}
+          {/* Feature Cards */}
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 transition-all duration-700 delay-500 ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
+          >
+            {[
+              {
+                icon: Shield,
+                title: "Free Forever",
+                desc: "Zero hidden costs, completely free",
+                color: "from-primary to-primary-glow",
+              },
+              {
+                icon: Zap,
+                title: "Lightning Fast",
+                desc: "Rapid development & delivery",
+                color: "from-accent to-secondary",
+              },
+              {
+                icon: Rocket,
+                title: "Production Ready",
+                desc: "Enterprise-grade quality",
+                color: "from-secondary to-accent",
+              },
+            ].map((feature, index) => (
+              <div
+                key={index}
+                className="group relative p-6 md:p-8 rounded-2xl glass-effect hover:bg-card/50 transition-all duration-300 hover:-translate-y-2 border-2 border-border/50 hover:border-primary/50"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative">
+                  <div
+                    className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-4 group-hover:scale-110 transition-transform`}
+                  >
+                    <feature.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg md:text-xl mb-2 text-foreground group-hover:text-gradient transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm md:text-base text-muted-foreground">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -159,4 +206,3 @@ const Hero = () => {
 };
 
 export default Hero;
-
