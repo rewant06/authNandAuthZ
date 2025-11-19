@@ -8,7 +8,7 @@ import {
   ForgotPasswordPayload,
   ResetPasswordPayload,
   User,
-} from "@iam-project/types";
+} from "@/types/index";
 
 export const registerUser = (data: RegisterPayload) => {
   return api.post<void>("/auth/register", data);

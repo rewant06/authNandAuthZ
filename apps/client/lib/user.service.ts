@@ -4,7 +4,7 @@ import {
   User,
   PaginatedResponse,
   ActivityLog,
-} from "@iam-project/types";
+} from "@/types/index";
 
 export const updateSelf = async (payload: UpdateProfilePayload) => {
   const { data } = await api.patch<{ user: User }>("/users/me", payload);

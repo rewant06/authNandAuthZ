@@ -13,7 +13,7 @@ import {
   updateProfileSchema,
   UpdateProfileInputs,
 } from "@/lib/validators/user.schema";
-import { User } from "@iam-project/types";
+import { User } from "@/types/index";
 import { logger } from "@/lib/logger";
 
 // UI Components

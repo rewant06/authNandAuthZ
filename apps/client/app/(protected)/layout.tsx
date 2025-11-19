@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Activity, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Users,
+  Activity,
+  LogOut,
+  Menu,
   ShieldCheck,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -22,18 +23,24 @@ import { logger } from "@/lib/logger";
 function DashboardSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const { permissions } = useAuthorization();
-  
+
   // Ensure permissions exist before checking
   const canAccessAdmin = permissions?.includes("MANAGE:all");
 
   const links = [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     // Conditionally render Admin links
-    ...(canAccessAdmin ? [
-      { href: "/dashboard/admin/users", label: "Users", icon: Users },
-      { href: "/dashboard/admin/activity-log", label: "Audit Logs", icon: Activity },
-    ] : []),
-    { href: "/dashboard/profile", label: "Settings", icon: Settings }
+    ...(canAccessAdmin
+      ? [
+          { href: "/dashboard/admin/users", label: "Users", icon: Users },
+          {
+            href: "/dashboard/admin/activity-log",
+            label: "Audit Logs",
+            icon: Activity,
+          },
+        ]
+      : []),
+    { href: "/dashboard/profile", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -52,7 +59,7 @@ function DashboardSidebar({ className }: { className?: string }) {
                   key={link.href}
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start", 
+                    "w-full justify-start",
                     isActive && "bg-primary/10 text-primary hover:bg-primary/20"
                   )}
                   asChild
@@ -71,22 +78,38 @@ function DashboardSidebar({ className }: { className?: string }) {
   );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [isMounted, setIsMounted] = useState(false);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
   useEffect(() => {
     setIsMounted(true);
-    if (!isAuthenticated) {
+    if (hasHydrated && !isAuthenticated) {
       logger.warn("Unauthenticated access to protected route. Redirecting.");
       router.replace("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, hasHydrated, router]);
+  if (!hasHydrated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <ShieldCheck className="h-12 w-12 text-primary animate-pulse" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isMounted || !isAuthenticated) {
-    return null; 
+    return null;
   }
 
   return (
@@ -106,7 +129,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <SheetContent side="left" className="w-[240px] sm:w-[300px]">
             <DashboardSidebar />
             <div className="px-4 py-4 mt-auto border-t">
-              <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => logout()}>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => logout()}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </Button>
@@ -118,14 +145,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border/50 bg-card/30 min-h-screen fixed left-0 top-0 bottom-0 z-40 glass-effect">
         <div className="p-6 flex items-center gap-2 border-b border-border/50">
-           <ShieldCheck className="h-6 w-6 text-primary" />
-           <span className="font-bold text-xl">HelpingBots</span>
+          <ShieldCheck className="h-6 w-6 text-primary" />
+          <span className="font-bold text-xl">HelpingBots</span>
         </div>
         <div className="flex-1 overflow-y-auto">
           <DashboardSidebar />
         </div>
         <div className="p-6 border-t border-border/50">
-          <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => logout()}>
+          <Button
+            variant="outline"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => logout()}
+          >
             <LogOut className="mr-2 h-4 w-4" />
             Logout
           </Button>

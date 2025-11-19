@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { jwtDecode } from "jwt-decode";
 import { loginUser, logoutUser } from "@/lib/auth.service";
-import { User, LoginPayload, JwtPayload } from "@iam-project/types";
+import { User, LoginPayload, JwtPayload } from "@/types/index";
 import { logger } from "@/lib/logger";
 
 interface AuthState {

@@ -11,7 +11,7 @@ import {
   manuallyVerifyUser,
   getUserActivity
 } from "@/lib/user.service";
-import { User, PaginatedResponse, ActivityLog } from "@iam-project/types";
+import { User, PaginatedResponse, ActivityLog } from "@/types/index";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -6,7 +6,7 @@ import { getActivityLogs } from "@/lib/activity.service";
 import {
   PaginatedResponse,
   ActivityLog,
-} from "@iam-project/types";
+} from "@/types/index";
 import { format } from "date-fns";
 import { 
   Table, 

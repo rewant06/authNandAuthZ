@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import useSWR from "swr";
 import { format } from "date-fns";
 import { getAllUsers } from "@/lib/user.service";
-import { User, PaginatedResponse } from "@iam-project/types";
+import { User, PaginatedResponse } from "@/types/index";
 
 import {
   Table,
