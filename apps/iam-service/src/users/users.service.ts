@@ -18,6 +18,20 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { UserPayload } from 'src/auth/types/user-payload.type';
 import { PaginatedResponse } from 'src/common/types/response.type';
 
+export const USER_SELECT_FIELDS = {
+  id: true,
+  name: true,
+  email: true,
+  isEmailVerified: true,
+  createdAt: true,
+  updatedAt: true,
+  roles: {
+    select: {
+      name: true,
+    },
+  },
+} satisfies Prisma.UserSelect;
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -97,19 +111,7 @@ export class UsersService {
               },
             },
 
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              isEmailVerified: true,
-              roles: {
-                select: {
-                  name: true,
-                },
-              },
-              createdAt: true,
-              updatedAt: true,
-            },
+            select: USER_SELECT_FIELDS,
           });
           return newUser;
         },
@@ -143,19 +145,7 @@ export class UsersService {
         this.prisma.user.findMany({
           skip: skip,
           take: limit,
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isEmailVerified: true,
-            roles: {
-              select: {
-                name: true,
-              },
-            },
-            createdAt: true,
-            updatedAt: true,
-          },
+          select: USER_SELECT_FIELDS,
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.user.count(),
@@ -205,18 +195,7 @@ export class UsersService {
         data: {
           name: dto.name?.trim(),
         },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          createdAt: true,
-          updatedAt: true,
-          roles: {
-            select: {
-              name: true,
-            },
-          },
-        },
+        select: USER_SELECT_FIELDS,
       });
       await this.rbacService.clearCacheForUser(userId);
       this.logger.log(
@@ -275,14 +254,7 @@ export class UsersService {
             name: dto.name?.trim(),
             roles: roleIds ? { set: roleIds } : undefined,
           },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            createdAt: true,
-            updatedAt: true,
-            roles: { select: { name: true } },
-          },
+          select: USER_SELECT_FIELDS,
         });
         return user;
       });
@@ -331,6 +303,46 @@ export class UsersService {
       }
       this.logger.error(`Admin delete failed for user: ${userId}`, error.stack);
       throw new InternalServerErrorException('User deletion failed.');
+    }
+  }
+
+  async getUserById(userId: string) {
+    this.logger.log(`Fetching user details for ID: ${userId}`);
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: USER_SELECT_FIELDS,
+      });
+
+      if (!user) {
+        this.logger.warn(`User not found: ${userId}`);
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.error(`Failed to fetch user ${userId}`, error);
+      throw new InternalServerErrorException('Could not fetch user details');
+    }
+  }
+
+  async verifyUserManually(userId: string, actorId: string) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: { isEmailVerified: true },
+        select: { id: true, email: true, isEmailVerified: true },
+      });
+
+      await this.rbacService.clearCacheForUser(userId);
+
+      this.logger.log(`Admin ${actorId} manually verified user ${userId}`);
+      return user;
+    } catch (error) {
+      this.logger.error('Verification update failed', error);
+      throw new InternalServerErrorException('Failed to manually verify user');
     }
   }
 }

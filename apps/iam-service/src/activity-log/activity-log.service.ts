@@ -9,6 +9,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpContextService } from './http-context.service';
 import { ActivityLogActionType, ActivityLogStatus } from '@prisma/iam-client';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { Prisma } from '@prisma/iam-client';
 
 @Injectable()
 export class ActivityLogService {
@@ -23,20 +24,29 @@ export class ActivityLogService {
   async getLogs(dto: PaginationDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 10;
+    const actorId = dto.actorId;
     const skip = (page - 1) * limit;
 
-    this.logger.log(`Fetching activity logs: Page ${page}, Limit ${limit}`);
+    this.logger.log(
+      `Fetching activity logs: Page ${page}, Limit ${limit}, Filter: ${actorId || 'ALL'}`,
+    );
+
+    const where: Prisma.ActivityLogWhereInput = {};
+    if (actorId) {
+      where.actorId = actorId;
+    }
 
     try {
       const [logs, total] = await this.prisma.$transaction([
         this.prisma.activityLog.findMany({
+          where,
           skip: skip,
           take: limit,
           orderBy: {
-            createdAt: 'desc', // Show newest logs first
+            createdAt: 'desc',
           },
         }),
-        this.prisma.activityLog.count(),
+        this.prisma.activityLog.count({ where }),
       ]);
 
       const totalPages = Math.ceil(total / limit);

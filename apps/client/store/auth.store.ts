@@ -4,7 +4,6 @@ import { jwtDecode } from "jwt-decode";
 import { loginUser, logoutUser } from "@/lib/auth.service";
 import { User, LoginPayload, JwtPayload } from "@iam-project/types";
 import { logger } from "@/lib/logger";
-import { permission } from "process";
 
 interface AuthState {
   accessToken: string | null;
@@ -13,11 +12,13 @@ interface AuthState {
   permissions: string[];
   roles: string[];
 
+  _hasHydrated: boolean;
+
   login: (credentials: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
   setToken: (token: string) => void;
   clearAuth: () => void;
-  _hydrate: () => void;
+  setHydrated: (state: boolean) => void;
 }
 
 const clearState = (set: any) => {
@@ -39,6 +40,10 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       permissions: [],
       roles: [],
+      _hasHydrated: false,
+      setHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
 
       login: async (credentials: LoginPayload) => {
         try {
@@ -86,18 +91,12 @@ export const useAuthStore = create<AuthState>()(
           logger.error("Failed to decode token during refresh", e);
         }
       },
-
-      _hydrate: () => {
-        const state = get();
-        logger.log("AuthStore hydrated from localStorage");
-      },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
-          state?._hydrate();
-        
+        state?.setHydrated(true);
       },
     }
   )

@@ -32,14 +32,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  MoreHorizontal, 
-  Shield, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Shield,
   Mail,
-  AlertCircle 
+  AlertCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 // Fetcher function
 const usersFetcher = ([_, page]: [string, number]) => getAllUsers(page);
@@ -80,7 +81,9 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Users</h2>
-          <p className="text-muted-foreground">Manage access and user details.</p>
+          <p className="text-muted-foreground">
+            Manage access and user details.
+          </p>
         </div>
         <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
           Add User
@@ -114,11 +117,21 @@ export default function AdminUsersPage() {
                   </TableHeader>
                   <TableBody>
                     {paginatedResponse?.data.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow
+                        key={user.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                      >
                         <TableCell>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 relative group">
+                            <Link
+                              href={`/dashboard/admin/users/${user.id}`}
+                              className="absolute inset-0 z-10"
+                            />
                             <Avatar className="h-9 w-9 border border-border">
-                              <AvatarImage src={(user as any) || ""} alt={user.name || 'User'} />
+                              <AvatarImage
+                                src={undefined}
+                                alt={user.name || "User"}
+                              />
                               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                                 {getInitials(user.name || "User")}
                               </AvatarFallback>
@@ -138,7 +151,7 @@ export default function AdminUsersPage() {
                           <div className="flex flex-wrap gap-1">
                             {user.roles.map((role) => (
                               <Badge
-                                key={role.id}
+                                key={role.name}
                                 variant="outline"
                                 className="flex items-center gap-1 px-2 py-0.5 text-xs font-normal"
                               >
@@ -177,7 +190,9 @@ export default function AdminUsersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem
-                                onClick={() => navigator.clipboard.writeText(user.id)}
+                                onClick={() =>
+                                  navigator.clipboard.writeText(user.id)
+                                }
                               >
                                 Copy ID
                               </DropdownMenuItem>

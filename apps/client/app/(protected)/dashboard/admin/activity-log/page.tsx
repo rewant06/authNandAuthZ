@@ -96,7 +96,7 @@ export default function AdminActivityLogPage() {
                       <TableCell>
                          <div className="flex flex-col text-sm">
                            <span className="font-medium">{log.entityType}</span>
-                           <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={log.entityId}>
+                           <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={log.entityId || ""}>
                              {log.entityId || undefined}
                            </span>
                          </div>

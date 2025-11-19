@@ -17,9 +17,9 @@ export interface User {
     email: string;
     name: string | null;
     roles: Role[];
-    permissions: string[];
-    createdAt: string;
     isEmailVerified?: boolean;
+    createdAt: string;
+    updatedAt?: string;
 }
 export interface ActivityLogActorSnapshot {
     email: string;

@@ -74,4 +74,21 @@ export class UsersController {
   async getAllUsers(@Query() dto: PaginationDto) {
     return this.usersService.getAllUsers(dto);
   }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission([PermissionAction.READ, 'User'])
+  @HttpCode(HttpStatus.OK)
+  async getUserById(@Param('id') id: string) {
+    const user = await this.usersService.getUserById(id);
+    return { user };
+  }
+
+  @Patch(':id/verify')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission([PermissionAction.UPDATE, 'User'])
+  @HttpCode(HttpStatus.OK)
+  async verifyUser(@Param('id') userId: string, @User() actor: UserPayload) {
+    return this.usersService.verifyUserManually(userId, actor.id);
+  }
 }
