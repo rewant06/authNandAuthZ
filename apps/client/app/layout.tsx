@@ -1,6 +1,8 @@
+// apps/client/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import { Navbar } from "@/components/layout/Navbar";
+import Navbar from "@/components/Navbar";
+import ClientToasters from "@/components/ui/ClientToasters";
 
 export const metadata: Metadata = {
   title: "HelpingBots",
@@ -9,14 +11,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body>
+        {/* ClientToasters is a client component imported directly (allowed) */}
+        <ClientToasters />
+
         <Navbar />
-        <main style={{ padding: "2rem" }}>{children}</main>
+
+        <main>{children}</main>
       </body>
     </html>
   );

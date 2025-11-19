@@ -1,6 +1,5 @@
 "use client";
 
-
 export const TableSkeleton = () => {
   return (
     <div className="animate-pulse">
@@ -12,10 +11,7 @@ export const TableSkeleton = () => {
       {/* Table Body Skeleton */}
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="h-16 bg-white dark:bg-gray-800"
-          >
+          <div key={i} className="h-16 bg-white dark:bg-gray-800">
             <div className="flex h-full items-center space-x-4 px-6">
               <div className="h-6 w-1/4 rounded bg-gray-200 dark:bg-gray-700"></div>
               <div className="h-6 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>

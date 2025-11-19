@@ -62,3 +62,5 @@ apps/iam-service/jwt-private.pem
 apps/iam-service/Plans.md
 apps/anonymously/Plans.md
 apps/iam-service/secrets/*
+.pnpm-store
+/home/rewant/Desktop/authentication/FromScratch/.pnpm-store

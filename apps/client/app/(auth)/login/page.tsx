@@ -11,6 +11,11 @@ import { useAuthStore } from "@/store/auth.store";
 import { logger } from "@/lib/logger";
 import { isAxiosError } from "axios";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
@@ -31,6 +36,7 @@ export default function LoginPage() {
     setApiError(null);
     try {
       await login(data);
+      toast.success("Welcome back!");
       logger.log("Login successful, redirecting to dashboard...");
       router.push("/dashboard");
     } catch (error: unknown) {
@@ -40,53 +46,63 @@ export default function LoginPage() {
       } else if (error instanceof Error) {
         errorMsg = error.message;
       }
+      toast.error(error.message || "Invalid credentials");
       logger.error("Login failed", error);
       setApiError(errorMsg);
     }
   };
 
+
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-    >
-      <h2>Login</h2>
+    <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="glass-effect p-8 rounded-2x1">
+          <h1 className="text-3x1 font-bold text-gradient mb-2">
+            Welcome Back
+          </h1>
+          <p className="text-muted-foreground mb-6"> Sign in to your account</p>
 
-      <div>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          {...register("email")}
-          style={{ width: "100%" }}
-        />
-        {errors.email && <p style={{ color: "red" }}>{errors.email.message}</p>}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register("email")}
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div>
+              <label htmlFor="password">Password</label>
+              <Input
+                id="password"
+                type="password"
+                {...register("password")}
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <a
+                className="text-primary hover:underline"
+                href="/forgot-password"
+              >
+                Forgon Password
+              </a>
+            </div>
+            <Button variant="destructive" type="submit" className="w-full" disabled={isSubmitting}>
+              {" "}
+              {isSubmitting ? "Logging in..." : "Login"}
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <a href="/register" className="text-primary hover:underline">
+              Sign up
+            </a>
+          </p>
+        </div>
       </div>
-
-      <div>
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          {...register("password")}
-          style={{ width: "100%" }}
-        />
-        {apiError && <p style={{ color: "red" }}> {apiError}</p>}
-      </div>
-
-      {apiError && <p style={{ color: "red" }}>{apiError} </p>}
-
-      <button type="submit" disabled={isSubmitting}>
-        {" "}
-        {isSubmitting ? "Logging in..." : "Login"}
-      </button>
-
-      <p>
-        Need an account? <a href="/register">Register</a>
-      </p>
-      <p>
-        <a href="/forgot-password">Forgon Password</a>
-      </p>
-    </form>
+    </main>
   );
 }
