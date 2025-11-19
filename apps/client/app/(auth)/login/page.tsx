@@ -68,7 +68,6 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
                 className="bg-background/50 border-primary/20 focus:border-primary transition-colors"
                 {...register("email")}
               />
@@ -84,7 +83,6 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
                 className="bg-background/50 border-primary/20 focus:border-primary transition-colors"
                 {...register("password")}
               />
@@ -104,9 +102,9 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-primary/25" 
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-primary/25"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Signing in..." : "Sign In"}
@@ -115,7 +113,10 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline font-medium">
+            <Link
+              href="/register"
+              className="text-primary hover:underline font-medium"
+            >
               Sign up
             </Link>
           </p>
