@@ -1,45 +1,39 @@
-// components/Hero.tsx
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Zap, Shield, Rocket } from "lucide-react";
-// remove react-router Link import if not used (you used <a> anchors)
-type Particle = {
-  left: string; // e.g. "23.45%"
-  top: string;  // e.g. "84.12%"
-  animationDelay: string; // "1.23s"
-  animationDuration: string; // "5.12s"
+
+// Type definition for stable particle rendering
+interface Particle {
   id: number;
-};
+  left: string;
+  top: string;
+  delay: string;
+  duration: string;
+}
 
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false);
-
-  // mounted indicates client-only rendering is allowed
-  const [mounted, setMounted] = useState(false);
-
-  // store generated particles in state so they're generated only on client
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
-    setIsVisible(true);
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 100);
 
-    // mark mounted so we know client has taken over
-    setMounted(true);
+    // Generate particles only on client-side to match hydration
+    const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${3 + Math.random() * 4}s`,
+    }));
+    setParticles(newParticles);
 
-    // generate particles client-side only
-    const count = 20;
-    const generated: Particle[] = Array.from({ length: count }).map((_, i) => {
-      const left = `${(Math.random() * 100).toFixed(6)}%`;
-      const top = `${(Math.random() * 100).toFixed(6)}%`;
-      const animationDelay = `${(Math.random() * 3).toFixed(9)}s`;
-      const animationDuration = `${(3 + Math.random() * 4).toFixed(12)}s`;
-      return { left, top, animationDelay, animationDuration, id: i };
-    });
-
-    // set after generation (this happens in useEffect so only on client)
-    setParticles(generated);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -53,7 +47,7 @@ const Hero = () => {
         }}
       />
 
-      {/* Animated orbs (static markup ok for SSR) */}
+      {/* Animated orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl animate-float" />
         <div
@@ -66,21 +60,20 @@ const Hero = () => {
         />
       </div>
 
-      {/* Floating particles — render them only after client mount to avoid SSR mismatch */}
+      {/* Floating particles (Client Only) */}
       <div className="absolute inset-0 pointer-events-none">
-        {mounted &&
-          particles.map((p) => (
-            <div
-              key={p.id}
-              className="absolute w-1 h-1 bg-primary/30 rounded-full animate-float"
-              style={{
-                left: p.left,
-                top: p.top,
-                animationDelay: p.animationDelay,
-                animationDuration: p.animationDuration,
-              }}
-            />
-          ))}
+        {particles.map((p) => (
+          <div
+            key={p.id}
+            className="absolute w-1 h-1 bg-primary/30 rounded-full animate-float"
+            style={{
+              left: p.left,
+              top: p.top,
+              animationDelay: p.delay,
+              animationDuration: p.duration,
+            }}
+          />
+        ))}
       </div>
 
       <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
@@ -88,12 +81,16 @@ const Hero = () => {
           {/* Badge */}
           <div
             className={`flex justify-center mb-8 transition-all duration-700 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 -translate-y-4"
             }`}
           >
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass-effect border-primary/30 shadow-lg">
               <Sparkles className="h-4 w-4 text-primary animate-glow" />
-              <span className="text-sm font-semibold text-gradient">100% Free Forever</span>
+              <span className="text-sm font-semibold text-gradient">
+                100% Free Forever
+              </span>
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             </div>
           </div>
@@ -101,7 +98,9 @@ const Hero = () => {
           {/* Main Heading */}
           <h1
             className={`text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-center mb-6 transition-all duration-700 delay-100 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
             }`}
           >
             <span className="block mb-2 text-gradient">Your Vision,</span>
@@ -113,17 +112,26 @@ const Hero = () => {
           {/* Subheading */}
           <p
             className={`text-lg md:text-xl lg:text-2xl text-muted-foreground text-center mb-12 max-w-3xl mx-auto leading-relaxed transition-all duration-700 delay-200 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
             }`}
           >
-            Transform your boldest ideas into stunning reality with our comprehensive suite of{" "}
-            <span className="text-primary font-semibold"> completely free</span> development and design services.
+            Transform your boldest ideas into stunning reality with our
+            comprehensive suite of{" "}
+            <span className="text-primary font-semibold">
+              {" "}
+              completely free
+            </span>{" "}
+            development and design services.
           </p>
 
           {/* CTA Buttons */}
           <div
             className={`flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 transition-all duration-700 delay-300 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
             }`}
           >
             <Button
@@ -131,10 +139,10 @@ const Hero = () => {
               size="lg"
               className="bg-gradient-to-r from-primary via-accent to-primary text-white hover:opacity-90 transition-all text-base md:text-lg px-8 py-6 rounded-full shadow-lg shadow-elevated hover:scale-105 group bg-[length:200%_auto] animate-shimmer"
             >
-              <a href="/get-started">
+              <Link href="/get-started">
                 Start Your Project Free
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
             </Button>
 
             <Button
@@ -143,17 +151,19 @@ const Hero = () => {
               variant="outline"
               className="glass-effect hover:bg-primary/10 text-base md:text-lg px-8 py-6 rounded-full border-2 hover:border-primary/50 transition-all group"
             >
-              <a href="/services">
+              <Link href="/services">
                 Explore Services
                 <Sparkles className="ml-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-              </a>
+              </Link>
             </Button>
           </div>
 
           {/* Feature Cards */}
           <div
             className={`grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 transition-all duration-700 delay-500 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
             }`}
           >
             {[
@@ -191,7 +201,9 @@ const Hero = () => {
                   <h3 className="font-bold text-lg md:text-xl mb-2 text-foreground group-hover:text-gradient transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="text-sm md:text-base text-muted-foreground">{feature.desc}</p>
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    {feature.desc}
+                  </p>
                 </div>
               </div>
             ))}

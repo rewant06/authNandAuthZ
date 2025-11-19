@@ -1,22 +1,15 @@
 import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
-import Testimonials from "@/components/Testimonials";
 import Services from "@/components/Services";
+import Testimonials from "@/components/Testimonials";
 
-
-const Index = () => {
+export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-
-      <main>
-        <Hero />
-        <Stats />
-        <Services />
-        <Testimonials />
-      </main>
-      {/* <Footer /> */}
-    </div>
+    <>
+      <Hero />
+      <Stats />
+      <Services />
+      <Testimonials />
+    </>
   );
-};
-
-export default Index;
+}

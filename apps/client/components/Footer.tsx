@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, Send, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast"; // keep your hook — I didn't change it
+import { useToast } from "@/hooks/use-toast";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -17,8 +17,8 @@ const Footer = () => {
     e.preventDefault();
     if (email) {
       toast({
-        title: "Thanks for subscribing!",
-        description: "You'll receive our latest updates and offers.",
+        title: "Subscribed!",
+        description: "You've successfully joined our newsletter.",
       });
       setEmail("");
     }
@@ -41,7 +41,9 @@ const Footer = () => {
                 <Send className="h-6 w-6 text-white" />
               </div>
             </div>
-            <h3 className="text-2xl md:text-3xl font-bold mb-3 text-gradient">Stay Updated</h3>
+            <h3 className="text-2xl md:text-3xl font-bold mb-3 text-gradient">
+              Stay Updated
+            </h3>
             <p className="text-muted-foreground mb-6 text-base md:text-lg">
               Subscribe to our newsletter for the latest updates, tips, and exclusive offers
             </p>
@@ -54,7 +56,10 @@ const Footer = () => {
                 className="flex-1 glass-effect border-primary/30 focus:border-primary"
                 required
               />
-              <Button type="submit" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity whitespace-nowrap group">
+              <Button 
+                type="submit" 
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity whitespace-nowrap group"
+              >
                 Subscribe
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -66,10 +71,18 @@ const Footer = () => {
           {/* Company Info */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-3 mb-4 group">
-              <div className="relative h-10 w-10 md:h-12 md:w-12">
-                <Image src="/logo.png" alt="HelpingBots Logo" fill className="object-contain" />
+              <div className="relative h-10 w-10 md:h-12 md:w-12 transition-transform group-hover:scale-110">
+                <Image 
+                  src="/logo.png" 
+                  alt="HelpingBots Logo" 
+                  fill 
+                  sizes="48px"
+                  className="object-contain" 
+                />
               </div>
-              <span className="text-xl md:text-2xl font-bold text-gradient">HelpingBots</span>
+              <span className="text-xl md:text-2xl font-bold text-gradient">
+                HelpingBots
+              </span>
             </Link>
             <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed">
               Transforming visions into reality with completely free, professional development and design services. Your success is our mission.
@@ -80,21 +93,18 @@ const Footer = () => {
                 { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
                 { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
                 { icon: Instagram, href: "https://instagram.com", label: "Instagram" }
-              ].map((social, index) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={index}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2.5 rounded-lg glass-effect border border-border hover:border-primary hover:bg-primary/10 transition-all hover:scale-110 group"
-                    aria-label={social.label}
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </a>
-                );
-              })}
+              ].map((social, index) => (
+                <a
+                  key={index}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 rounded-lg glass-effect border border-border hover:border-primary hover:bg-primary/10 transition-all hover:scale-110 group"
+                  aria-label={social.label}
+                >
+                  <social.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </a>
+              ))}
             </div>
           </div>
 
@@ -109,8 +119,13 @@ const Footer = () => {
                 { name: "Get Started", path: "/get-started" },
               ].map((link) => (
                 <li key={link.path}>
-                  <Link href={link.path} className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors inline-flex items-center group">
-                    <span className="group-hover:translate-x-1 transition-transform">{link.name}</span>
+                  <Link 
+                    href={link.path} 
+                    className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors inline-flex items-center group"
+                  >
+                    <span className="group-hover:translate-x-1 transition-transform">
+                      {link.name}
+                    </span>
                   </Link>
                 </li>
               ))}
@@ -146,19 +161,25 @@ const Footer = () => {
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <Mail className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
-                <a href="mailto:contact@helpingbots.com" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">contact@helpingbots.com</a>
+                <a href="mailto:contact@helpingbots.com" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
+                  contact@helpingbots.com
+                </a>
               </li>
               <li className="flex items-start gap-3 group">
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <Phone className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
-                <a href="tel:+1234567890" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">+1 (234) 567-890</a>
+                <a href="tel:+1234567890" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
+                  +1 (234) 567-890
+                </a>
               </li>
               <li className="flex items-start gap-3 group">
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
-                <span className="text-sm md:text-base text-muted-foreground">123 Tech Street, Innovation City, TC 12345</span>
+                <span className="text-sm md:text-base text-muted-foreground">
+                  123 Tech Street, Innovation City, TC 12345
+                </span>
               </li>
             </ul>
           </div>
@@ -171,8 +192,12 @@ const Footer = () => {
               © {currentYear} <span className="text-primary font-semibold">HelpingBots</span>. All rights reserved. Built with ❤️ for free.
             </p>
             <div className="flex gap-6">
-              <Link href="/privacy" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
+                Terms of Service
+              </Link>
             </div>
           </div>
         </div>

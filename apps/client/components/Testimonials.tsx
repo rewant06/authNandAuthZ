@@ -1,4 +1,3 @@
-// components/Testimonials.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -106,7 +105,7 @@ const Testimonials = () => {
       className="py-16 md:py-24 bg-gradient-to-b from-background via-muted/20 to-background relative overflow-hidden"
     >
       {/* Background decoration */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl animate-float" />
         <div
           className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/30 rounded-full blur-3xl animate-float"
@@ -117,27 +116,32 @@ const Testimonials = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div
           className={`text-center mb-12 md:mb-16 transition-all duration-700 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-10"
           }`}
         >
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             What Our <span className="text-gradient">Clients Say</span>
           </h2>
           <p className="text-muted-foreground text-lg md:text-xl max-w-3xl mx-auto">
-            Don't just take our word for it - hear from the amazing people we've
-            helped bring their visions to life
+            Don&apos;t just take our word for it - hear from the amazing people
+            we&apos;ve helped bring their visions to life
           </p>
         </div>
 
         <div
           className={`max-w-4xl mx-auto relative transition-all duration-700 delay-200 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-10"
           }`}
         >
           <Card className="border-2 glass-effect shadow-elevated overflow-hidden relative group">
             <Quote className="absolute top-4 left-4 md:top-6 md:left-6 h-12 w-12 md:h-16 md:w-16 text-primary/10" />
 
             <CardContent className="p-8 md:p-12 lg:p-16 relative">
+              {/* Rating stars */}
               <div className="flex justify-center mb-6 md:mb-8 gap-1">
                 {[...Array(currentTestimonial.rating)].map((_, i) => (
                   <Star
@@ -149,7 +153,7 @@ const Testimonials = () => {
               </div>
 
               <blockquote className="text-lg md:text-xl lg:text-2xl text-center mb-8 md:mb-10 text-foreground/90 leading-relaxed font-medium">
-                "{currentTestimonial.content}"
+                &quot;{currentTestimonial.content}&quot;
               </blockquote>
 
               <div className="flex flex-col md:flex-row items-center justify-center gap-4">
@@ -173,6 +177,7 @@ const Testimonials = () => {
             </CardContent>
           </Card>
 
+          {/* Navigation */}
           <div className="flex items-center justify-center gap-4 mt-8 md:mt-10">
             <Button
               variant="outline"
