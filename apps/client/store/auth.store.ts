@@ -4,11 +4,15 @@ import { jwtDecode } from "jwt-decode";
 import { loginUser, logoutUser } from "@/lib/auth.service";
 import { User, LoginPayload, JwtPayload } from "@iam-project/types";
 import { logger } from "@/lib/logger";
+import { permission } from "process";
 
 interface AuthState {
   accessToken: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  permissions: string[];
+  roles: string[];
+
   login: (credentials: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
   setToken: (token: string) => void;
@@ -17,7 +21,13 @@ interface AuthState {
 }
 
 const clearState = (set: any) => {
-  set({ accessToken: null, user: null, isAuthenticated: false });
+  set({
+    accessToken: null,
+    user: null,
+    isAuthenticated: false,
+    permissions: [],
+    roles: [],
+  });
   logger.log("User logged out and state cleared");
 };
 
@@ -27,43 +37,58 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       user: null,
       isAuthenticated: false,
+      permissions: [],
+      roles: [],
 
       login: async (credentials: LoginPayload) => {
-        const { accessToken, user } = await loginUser(credentials);
-        const payload: JwtPayload = jwtDecode(accessToken);
-        logger.log("Decode JWT Payload: ", payload);
+        try {
+          const { accessToken, user } = await loginUser(credentials);
+          const payload = jwtDecode<JwtPayload>(accessToken);
 
-        set({
-          accessToken,
-          user,
-          isAuthenticated: true,
-        });
+          set({
+            accessToken,
+            user,
+            isAuthenticated: true,
+            permissions: payload.permissions || [],
+            roles: payload.roles || [],
+          });
+
+          logger.log("Login successful. User:", user.email);
+        } catch (error) {
+          logger.error("Login flow failed", error);
+          throw error; // Re-throw for UI to handle
+        }
       },
 
       logout: async () => {
         try {
           await logoutUser();
-          logger.log("Server logout successful.");
         } catch (error: unknown) {
-          logger.error(
-            "Logout API call failed, but logging out locally.",
-            error
-          );
+          logger.warn("Logout API call failed", error);
         } finally {
           clearState(set);
         }
       },
-      
-      clearAuth:() => {
+
+      clearAuth: () => {
         clearState(set);
       },
 
       setToken: (token: string) => {
-        set({ accessToken: token });
-        logger.log("Access token has been set");
+        try {
+          const payload = jwtDecode<JwtPayload>(token);
+          set({
+            accessToken: token,
+            permissions: payload.permissions || [],
+            roles: payload.roles || [],
+          });
+        } catch (e) {
+          logger.error("Failed to decode token during refresh", e);
+        }
       },
 
       _hydrate: () => {
+        const state = get();
         logger.log("AuthStore hydrated from localStorage");
       },
     }),
@@ -71,9 +96,8 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state._hydrate();
-        }
+          state?._hydrate();
+        
       },
     }
   )

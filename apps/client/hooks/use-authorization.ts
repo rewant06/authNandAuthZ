@@ -1,38 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
-import { jwtDecode } from "jwt-decode";
 import { useAuthStore } from "@/store/auth.store";
-import { JwtPayload } from "@iam-project/types";
-import { logger } from "@/lib/logger";
 
 interface AuthInfo {
   roles: string[];
   permissions: string[];
 }
 
-const emptyAuthInfo: AuthInfo = {
-  roles: [],
-  permissions: [],
-};
-
 export const useAuthorization = (): AuthInfo => {
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const authInfo = useMemo((): AuthInfo => {
-    if (!accessToken) {
-      return emptyAuthInfo;
-    }
+  // Direct access from store - no re-decoding needed
+  const roles = useAuthStore((state) => state.roles);
+  const permissions = useAuthStore((state) => state.permissions);
 
-    try {
-      const payload: JwtPayload = jwtDecode(accessToken);
-      return {
-        roles: payload.roles || [],
-        permissions: payload.permissions || [],
-      };
-    } catch (error) {
-      logger.error("Failed to decode JWT:", error);
-      return emptyAuthInfo;
-    }
-  }, [accessToken]);
-  return authInfo;
+  return {
+    roles: roles || [],
+    permissions: permissions || [],
+  };
 };

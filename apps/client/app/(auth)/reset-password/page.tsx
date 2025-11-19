@@ -6,15 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// Note: Ensure authAPI is available in your lib or replace with auth service
-// import { authAPI } from "@/lib/auth-api";
+import { resetPassword } from "@/lib/auth.service";
 
-// Placeholder function if you don't have the service ready yet
-const resetPasswordApi = async (token: string, pass: string) => {
-  // Replace this with actual API call
-  console.log("Resetting", token, pass);
-  return new Promise((resolve) => setTimeout(resolve, 1000));
-};
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -53,12 +46,13 @@ function ResetPasswordForm() {
     setIsLoading(true);
 
     try {
-      await resetPasswordApi(token, password);
+      await resetPassword({token, password});
       toast.success("Password reset successful! Please sign in.");
       router.push("/login");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Password reset failed");
+      const msg = error?.response?.data?.message || "Password reset failed";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

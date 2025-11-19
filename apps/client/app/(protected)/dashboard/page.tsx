@@ -27,7 +27,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Active</div>
-            <p className="text-xs text-muted-foreground">Logged in via {user?.provider || "Email"}</p>
+            {/* <p className="text-xs text-muted-foreground">Logged in via {user?.provider || "Email"}</p> */}
           </CardContent>
         </Card>
 

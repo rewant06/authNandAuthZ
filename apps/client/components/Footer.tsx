@@ -7,11 +7,17 @@ import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, Send, Arro
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { usePathname } from "next/navigation";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const { toast } = useToast();
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/dashboard")) {
+return null;
+  }
 
   const handleNewsletter = (e: React.FormEvent) => {
     e.preventDefault();

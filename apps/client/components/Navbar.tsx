@@ -18,13 +18,19 @@ export function Navbar() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
 
-  const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Services", path: "/services" },
-    { name: "About Us", path: "/about" },
-  ];
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const isActive = (path: string) => pathname === path;
+  useEffect(() => {
+    if (!isOpen) return;
+    const node = menuRef.current!;
+    const focusable = node.querySelectorAll<HTMLElement>(
+      "a[href], button:not([disabled])"
+    );
+    if (focusable.length > 0) focusable[0].focus();
+  }, [isOpen]);
+
+  useEffect(() => setIsOpen(false), [pathname]);
 
   const handleLogout = async () => {
     logger.log("User clicking logout");
@@ -37,18 +43,17 @@ export function Navbar() {
     }
   };
 
-  /* Focus trap & ESC handling */
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Services", path: "/services" },
+    { name: "About Us", path: "/about" },
+  ];
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const node = menuRef.current!;
-    const focusable = node.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
-    if (focusable.length > 0) focusable[0].focus();
-  }, [isOpen]);
+  const isActive = (path: string) => pathname === path;
 
-  useEffect(() => setIsOpen(false), [pathname]);
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -99,8 +104,8 @@ export function Navbar() {
             {/* Auth Buttons */}
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Button 
-                  asChild 
+                <Button
+                  asChild
                   variant="ghost"
                   className="text-foreground hover:text-primary transition-colors"
                 >

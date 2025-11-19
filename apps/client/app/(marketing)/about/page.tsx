@@ -33,10 +33,10 @@ const AboutPage = () => {
             <div className="glass-effect p-8 md:p-12 rounded-3xl border border-border/50 shadow-elevated mb-16 animate-fade-in" style={{ animationDelay: "100ms" }}>
               <div className="prose prose-lg max-w-none dark:prose-invert">
                 <p className="text-foreground/90 leading-relaxed mb-6 text-lg">
-                  HelpingBots was founded on a radical premise: <strong>Great ideas shouldn't die in a notebook because of budget constraints.</strong>
+                  HelpingBots was founded on a radical premise: <strong>Great ideas shouldn&apos;t die in a notebook because of budget constraints.</strong>
                 </p>
                 <p className="text-foreground/80 leading-relaxed">
-                  We are a team of senior developers, designers, and strategists who have seen too many brilliant startups fail simply because they couldn't afford an MVP. We exist to bridge that gap. By providing professional-grade software development completely free of charge, we empower entrepreneurs to focus on what matters most: <strong>their vision.</strong>
+                  We are a team of senior developers, designers, and strategists who have seen too many brilliant startups fail simply because they couldn&apos;t afford an MVP. We exist to bridge that gap. By providing professional-grade software development completely free of charge, we empower entrepreneurs to focus on what matters most: <strong>their vision.</strong>
                 </p>
               </div>
             </div>
@@ -61,7 +61,7 @@ const AboutPage = () => {
                 {
                   icon: Zap,
                   title: "Our Velocity",
-                  desc: "Free doesn't mean slow. We operate with Agile methodologies to deliver production-ready scalable code at startup speed.",
+                  desc: "Free doesn&apos;t mean slow. We operate with Agile methodologies to deliver production-ready scalable code at startup speed.",
                   color: "from-secondary/20 to-primary/20",
                   iconColor: "text-secondary"
                 }

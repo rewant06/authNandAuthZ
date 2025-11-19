@@ -25,9 +25,11 @@ export interface User {
   email: string;
   name: string | null;
   roles: Role[];
-  permissions: string[];
-  createdAt: string;
   isEmailVerified?: boolean;
+  // permissions: string[];
+  createdAt: string;
+  updatedAt?: string;
+
 }
 
 // --- Activity Log Types ---

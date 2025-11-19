@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9 border border-border">
-                              <AvatarImage src={user.image || ""} alt={user.name} />
+                              <AvatarImage src={(user as any) || ""} alt={user.name || 'User'} />
                               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                                 {getInitials(user.name || "User")}
                               </AvatarFallback>

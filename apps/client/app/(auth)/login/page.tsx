@@ -20,7 +20,6 @@ type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [apiError, setApiError] = React.useState<string | null>(null);
 
   const login = useAuthStore((state) => state.login);
@@ -44,6 +43,10 @@ export default function LoginPage() {
       let errorMsg = "An unknown error occured";
       if (isAxiosError(error)) {
         errorMsg = error.response?.data?.message || error.message;
+        if (error.response?.status === 403) {
+           toast.error("Email not verified. Please check your inbox.");
+           return; 
+        }
       } else if (error instanceof Error) {
         errorMsg = error.message;
       }
