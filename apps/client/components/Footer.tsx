@@ -168,7 +168,7 @@ return null;
                   <Mail className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
                 <a href="mailto:contact@helpingbots.com" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
-                  contact@helpingbots.com
+                  rewant.off@gmail.com
                 </a>
               </li>
               <li className="flex items-start gap-3 group">
@@ -176,7 +176,7 @@ return null;
                   <Phone className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
                 <a href="tel:+1234567890" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
-                  +1 (234) 567-890
+                  +91 7909053014
                 </a>
               </li>
               <li className="flex items-start gap-3 group">
@@ -184,7 +184,7 @@ return null;
                   <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
                 <span className="text-sm md:text-base text-muted-foreground">
-                  123 Tech Street, Innovation City, TC 12345
+                  Koramangala, Bangalore, 560034
                 </span>
               </li>
             </ul>
