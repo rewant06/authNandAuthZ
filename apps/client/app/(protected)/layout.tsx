@@ -1,20 +1,23 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   Users, 
   Activity, 
   LogOut, 
   Menu, 
-  ShieldCheck 
+  ShieldCheck,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/auth.store";
 import { useAuthorization } from "@/hooks/use-authorization";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 function DashboardSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
@@ -30,6 +33,7 @@ function DashboardSidebar({ className }: { className?: string }) {
       { href: "/dashboard/admin/users", label: "Users", icon: Users },
       { href: "/dashboard/admin/activity-log", label: "Audit Logs", icon: Activity },
     ] : []),
+    { href: "/dashboard/profile", label: "Settings", icon: Settings }
   ];
 
   return (
@@ -68,7 +72,22 @@ function DashboardSidebar({ className }: { className?: string }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (!isAuthenticated) {
+      logger.warn("Unauthenticated access to protected route. Redirecting.");
+      router.replace("/login");
+    }
+  }, [isAuthenticated, router]);
+
+  if (!isMounted || !isAuthenticated) {
+    return null; 
+  }
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
