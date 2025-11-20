@@ -1,8 +1,8 @@
 # Git and system files
 .git
 .DS_Store
-*.pem
-*.key
+# *.pem
+# *.key
 
 # Node build artifacts
 node_modules
@@ -30,6 +30,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Secret key files
-*.pem
-*.key
+# *.pem
+# *.key
 .pnpm-store

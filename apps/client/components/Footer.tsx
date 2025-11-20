@@ -166,7 +166,7 @@ return null;
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <Mail className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
-                <a href="mailto:contact@helpingbots.com" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
+                <a href="rewant.off@gmail.com" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
                   rewant.off@gmail.com
                 </a>
               </li>
@@ -174,7 +174,7 @@ return null;
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <Phone className="h-4 w-4 text-primary flex-shrink-0" />
                 </div>
-                <a href="tel:+1234567890" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
+                <a href="tel:+917909053014" className="text-sm md:text-base text-muted-foreground hover:text-primary transition-colors">
                   +91 7909053014
                 </a>
               </li>

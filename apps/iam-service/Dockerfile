@@ -1,59 +1,64 @@
-#
-# === STAGE 1: Build ===
-#
-FROM node:24-alpine AS builder
+# --- STAGE 1: BUILDER ---
+FROM node:22-alpine AS builder
 
-# Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm prisma@6.19.0
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# 1. Install Dependencies
-COPY pnpm-lock.yaml pnpm-workspace.yaml .
-COPY package.json .
+# 1. Context Setup
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json ./
 COPY apps/iam-service/package.json ./apps/iam-service/
 COPY apps/anonymously/package.json ./apps/anonymously/
-COPY apps/client/package.json ./apps/client/
+
+# 2. Install Dependencies
 RUN pnpm install --frozen-lockfile
 
-# 2. Copy *only* the Prisma schemas
-COPY apps/iam-service/prisma/schema.prisma ./apps/iam-service/prisma/
-COPY apps/anonymously/prisma/schema.prisma ./apps/anonymously/prisma/
+# 3. Copy Source Code
+COPY apps/iam-service ./apps/iam-service
 
-# 3. Copy the rest of the source code
-COPY . .
+# 4. Generate Prisma Client
+WORKDIR /app/apps/iam-service
+RUN prisma generate
 
-# 4. Build the app
-RUN pnpm --filter iam-service run build:prod
+# 5. Build the App (Using pnpm to ensure context is correct)
+RUN pnpm build
 
-# 5. Prune and deploy production files
-RUN pnpm --filter iam-service deploy --prod --legacy /prod/iam-service
+# --- STAGE 2: RUNNER ---
+FROM node:22-alpine AS runner
 
-# 6. Manually copy the build artifacts (THE FIX)
-# This is required because pnpm deploy ignores gitignored files like /dist
-RUN cp -r /app/apps/iam-service/dist /prod/iam-service/dist
-
-#
-# === STAGE 2: Production ===
-#
-FROM node:24-alpine
+RUN apk add --no-cache openssl
+RUN npm install -g pnpm prisma@6.19.0
 
 WORKDIR /app
+ENV NODE_ENV production
 
-# Create a non-root user and group for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN chown -R appuser:appgroup /app
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nestjs -u 1001
 
-# Copy the pruned, production-only app from the builder stage
-COPY --from=builder /prod/iam-service .
+# 1. Setup Dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/iam-service/package.json ./apps/iam-service/
 
-ENV NODE_ENV=production
+# Install Prod Deps
+RUN pnpm install --prod --frozen-lockfile
 
-# Switch to the non-root user
-USER appuser
+# 2. Copy Built Assets
+COPY --chown=nestjs:nodejs --from=builder /app/apps/iam-service/dist ./apps/iam-service/dist
+COPY --chown=nestjs:nodejs --from=builder /app/apps/iam-service/prisma ./apps/iam-service/prisma
+COPY --chown=nestjs:nodejs apps/iam-service/jwt-private.pem ./jwt-private.pem
+COPY --chown=nestjs:nodejs apps/iam-service/jwt-public.pem ./jwt-public.pem
 
-# Expose the port
+# 3. Generate Client in Runner
+WORKDIR /app/apps/iam-service
+RUN prisma generate
+
+# 4. Permissions
+WORKDIR /app
+RUN chown -R nestjs:nodejs /app/apps/iam-service/node_modules
+
+USER nestjs
+
 EXPOSE 8000
 
-# Run the app
-CMD ["node", "dist/main"]
+CMD ["node", "apps/iam-service/dist/src/main.js"]

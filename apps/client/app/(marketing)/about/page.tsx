@@ -25,7 +25,7 @@ const AboutPage = () => {
                 About <span className="text-gradient">HelpingBots</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                We are a collective of dreamers and builders, dedicated to the belief that <span className="text-primary font-medium">innovation should be free</span>.
+                We are a collective of dreamers and builders, dedicated to the belief that <span className="text-primary font-medium">innovation should be affordable</span>.
               </p>
             </div>
 
@@ -36,7 +36,7 @@ const AboutPage = () => {
                   HelpingBots was founded on a radical premise: <strong>Great ideas shouldn&apos;t die in a notebook because of budget constraints.</strong>
                 </p>
                 <p className="text-foreground/80 leading-relaxed">
-                  We are a team of senior developers, designers, and strategists who have seen too many brilliant startups fail simply because they couldn&apos;t afford an MVP. We exist to bridge that gap. By providing professional-grade software development completely free of charge, we empower entrepreneurs to focus on what matters most: <strong>their vision.</strong>
+                  We are a team of senior developers, designers, and strategists who have seen too many brilliant startups fail simply because they couldn&apos;t afford an MVP. We exist to bridge that gap. By providing professional-grade software development completely affordable, we empower entrepreneurs to focus on what matters most: <strong>their vision.</strong>
                 </p>
               </div>
             </div>
@@ -61,7 +61,7 @@ const AboutPage = () => {
                 {
                   icon: Zap,
                   title: "Our Velocity",
-                  desc: "Free doesn&apos;t mean slow. We operate with Agile methodologies to deliver production-ready scalable code at startup speed.",
+                  desc: "Affordable doesn't mean slow. We operate with Agile methodologies to deliver production-ready scalable code at startup speed.",
                   color: "from-secondary/20 to-primary/20",
                   iconColor: "text-secondary"
                 }

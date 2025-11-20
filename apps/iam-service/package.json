@@ -8,7 +8,7 @@
   "scripts": {
     "prisma": "prisma",
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
-    "build": "nest build --watch iam-service",
+    "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "build:prod": "pnpm run prisma:generate && nest build iam-service",
