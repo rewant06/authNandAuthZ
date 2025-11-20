@@ -24,7 +24,7 @@ const servicesData = [
       { name: "Posting App", description: "User choise based idetity reveal. Best for feedback and free communication", icon: Globe },
       { name: "IAM Service", description: "Users and Permission managment with activity-log", icon: Database },
       { name: "School Management", description: "Under Development, Coming soon", icon: Database },
-      { name: "AI-Physian", description: "Under Progress, Comming soon", icon: Brain },
+      { name: "AI-Physician", description: "Under Progress, Comming soon", icon: Brain },
       // { name: "AI Integration", description: "Smart features powered by machine learning", icon: Brain },
       // { name: "Security Systems", description: "Identity management & data protection", icon: Lock },
     ],

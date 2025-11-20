@@ -89,7 +89,7 @@ const Hero = () => {
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass-effect border-primary/30 shadow-lg">
               <Sparkles className="h-4 w-4 text-primary animate-glow" />
               <span className="text-sm font-semibold text-gradient">
-                100% Satisfaction
+                100% Affordable
               </span>
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             </div>
