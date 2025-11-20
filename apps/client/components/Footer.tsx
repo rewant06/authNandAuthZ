@@ -40,7 +40,7 @@ return null;
 
       <div className="container mx-auto px-4 py-12 md:py-16 lg:py-20 relative z-10">
         {/* Newsletter Section */}
-        <div className="max-w-4xl mx-auto mb-12 md:mb-16">
+        {/* <div className="max-w-4xl mx-auto mb-12 md:mb-16">
           <div className="glass-effect rounded-2xl p-6 md:p-8 lg:p-10 border-2 border-primary/20 shadow-lg text-center">
             <div className="flex justify-center mb-4">
               <div className="p-3 rounded-full bg-gradient-to-br from-primary to-accent">
@@ -71,7 +71,7 @@ return null;
               </Button>
             </form>
           </div>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 mb-10 md:mb-12">
           {/* Company Info */}
@@ -91,14 +91,13 @@ return null;
               </span>
             </Link>
             <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed">
-              Transforming visions into reality with completely free, professional development and design services. Your success is our mission.
+              Transforming visions into reality with completely affordable, professional development and design services. Your success is our mission.
             </p>
             <div className="flex gap-3">
               {[
-                { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-                { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-                { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-                { icon: Instagram, href: "https://instagram.com", label: "Instagram" }
+                
+                { icon: Linkedin, href: "https://www.linkedin.com/in/rewant-raj", label: "LinkedIn" },
+                { icon: Instagram, href: "https://instagram.com/rewant06", label: "Instagram" }
               ].map((social, index) => (
                 <a
                   key={index}

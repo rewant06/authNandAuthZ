@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Define props to make the component flexible
 interface ServicesProps {
   showTitle?: boolean;
   className?: string;
@@ -17,32 +16,32 @@ interface ServicesProps {
 const servicesData = [
   {
     id: "software",
-    title: "Software Development",
+    title: "Products",
     icon: Code,
-    description: "Full-stack application development with cutting-edge technologies",
+    description: "Services with cutting-edge technologies",
     color: "from-primary to-primary-glow",
     projects: [
-      { name: "Web Applications", description: "Responsive, modern web apps with React, Vue, or Angular", icon: Globe },
-      { name: "Mobile Apps", description: "Native & cross-platform mobile applications", icon: Smartphone },
-      { name: "API Development", description: "RESTful & GraphQL APIs with secure authentication", icon: Database },
-      { name: "Cloud Solutions", description: "Scalable cloud infrastructure & deployment", icon: Cloud },
-      { name: "AI Integration", description: "Smart features powered by machine learning", icon: Brain },
-      { name: "Security Systems", description: "Identity management & data protection", icon: Lock },
+      { name: "Posting App", description: "User choise based idetity reveal. Best for feedback and free communication", icon: Globe },
+      { name: "IAM Service", description: "Users and Permission managment with activity-log", icon: Database },
+      { name: "School Management", description: "Under Development, Coming soon", icon: Database },
+      { name: "AI-Physian", description: "Under Progress, Comming soon", icon: Brain },
+      // { name: "AI Integration", description: "Smart features powered by machine learning", icon: Brain },
+      // { name: "Security Systems", description: "Identity management & data protection", icon: Lock },
     ],
   },
   {
     id: "graphics",
-    title: "Graphics & Design",
+    title: "Developments",
     icon: Palette,
-    description: "Professional visual design services that captivate your audience",
+    description: "Quality design and development services that captivate your audience",
     color: "from-accent to-secondary",
     projects: [
       { name: "Brand Identity", description: "Logos, color schemes, and brand guidelines", icon: Palette },
       { name: "UI/UX Design", description: "User-centered interface design for all platforms", icon: Smartphone },
-      { name: "Marketing Materials", description: "Social media graphics & print designs", icon: Megaphone },
+      { name: "Web Applications", description: "Responsive, modern web apps with Nextjs and RestApi's", icon: Globe },
       { name: "Video Editing", description: "Professional video production & post-processing", icon: Video },
-      { name: "3D Graphics", description: "Stunning 3D models and visualizations", icon: Globe },
-      { name: "Product Design", description: "E-commerce visuals & product mockups", icon: ShoppingCart },
+      // { name: "3D Graphics", description: "Stunning 3D models and visualizations", icon: Globe },
+      // { name: "Product Design", description: "E-commerce visuals & product mockups", icon: ShoppingCart },
     ],
   },
 ];

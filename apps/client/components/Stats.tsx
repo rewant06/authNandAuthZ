@@ -14,28 +14,28 @@ interface StatItem {
 const statsData: StatItem[] = [
   {
     icon: Users,
-    value: 500,
+    value: 1500,
     suffix: "+",
-    label: "Happy Clients",
+    label: "Happy Users",
     color: "from-primary to-primary-glow",
   },
   {
     icon: Code,
-    value: 1200,
+    value: 10,
     suffix: "+",
     label: "Projects Delivered",
     color: "from-accent to-secondary",
   },
   {
     icon: Palette,
-    value: 850,
+    value: 10,
     suffix: "+",
     label: "Designs Created",
     color: "from-secondary to-accent",
   },
   {
     icon: Trophy,
-    value: 98,
+    value: 100,
     suffix: "%",
     label: "Satisfaction Rate",
     color: "from-primary to-accent",

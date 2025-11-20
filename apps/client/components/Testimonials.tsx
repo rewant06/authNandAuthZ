@@ -12,7 +12,7 @@ const testimonials = [
     role: "Startup Founder",
     company: "TechVision Inc",
     content:
-      "HelpingBots transformed our idea into a fully functional app. Their free service is incredible - we got enterprise-level quality without any cost! The team's dedication and expertise exceeded all our expectations.",
+      "HelpingBots transformed our idea into a fully functional app. Their affordable service is incredible - we got enterprise-level quality without any cost! The team's dedication and expertise exceeded all our expectations.",
     rating: 5,
     avatar: "SJ",
     gradient: "from-primary to-primary-glow",
@@ -45,7 +45,7 @@ const testimonials = [
     role: "Tech Entrepreneur",
     company: "SocialHub",
     content:
-      "I was skeptical about free services, but HelpingBots proved me wrong. They delivered a complex anonymous posting app with all features we needed. Absolutely phenomenal work!",
+      "I was skeptical about affordable services, but HelpingBots proved me wrong. They delivered a complex anonymous posting app with all features we needed. Absolutely phenomenal work!",
     rating: 5,
     avatar: "DK",
     gradient: "from-primary to-accent",

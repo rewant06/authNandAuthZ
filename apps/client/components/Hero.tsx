@@ -89,7 +89,7 @@ const Hero = () => {
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass-effect border-primary/30 shadow-lg">
               <Sparkles className="h-4 w-4 text-primary animate-glow" />
               <span className="text-sm font-semibold text-gradient">
-                100% Free Forever
+                100% Satisfaction
               </span>
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             </div>
@@ -105,7 +105,7 @@ const Hero = () => {
           >
             <span className="block mb-2 text-gradient">Your Vision,</span>
             <span className="block bg-gradient-to-r from-foreground via-foreground/90 to-foreground bg-clip-text text-transparent">
-              Our Responsibility
+              Our Goal
             </span>
           </h1>
 
@@ -121,7 +121,7 @@ const Hero = () => {
             comprehensive suite of{" "}
             <span className="text-primary font-semibold">
               {" "}
-              completely free
+              completely affordable
             </span>{" "}
             development and design services.
           </p>
@@ -140,7 +140,7 @@ const Hero = () => {
               className="bg-gradient-to-r from-primary via-accent to-primary text-white hover:opacity-90 transition-all text-base md:text-lg px-8 py-6 rounded-full shadow-lg shadow-elevated hover:scale-105 group bg-[length:200%_auto] animate-shimmer"
             >
               <Link href="/get-started">
-                Start Your Project Free
+                Start Demo
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
@@ -169,8 +169,8 @@ const Hero = () => {
             {[
               {
                 icon: Shield,
-                title: "Free Forever",
-                desc: "Zero hidden costs, completely free",
+                title: "Affordable",
+                desc: "Zero hidden costs",
                 color: "from-primary to-primary-glow",
               },
               {
