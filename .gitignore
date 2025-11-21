@@ -65,3 +65,4 @@ apps/iam-service/secrets/*
 .pnpm-store
 docker-compose.test.yml
 /home/rewant/Desktop/authentication/FromScratch/.pnpm-store
+Notes.md

@@ -1,0 +1,99 @@
+name: Production Build & Push
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch: # Allows manual button click
+
+# Prevent multiple builds running at once on the same branch (save money/resources)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPO_IAM: helpingbots/iam-service
+  ECR_REPO_ANON: helpingbots/anonymously-service
+
+jobs:
+  # --- JOB 1: BUILD IAM SERVICE ---
+  build-iam:
+    name:  Build IAM Service
+    runs-on: ubuntu-latest
+
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name:  Checkout Code
+        uses: actions/checkout@v4
+
+      # Path Filter logic would go here
+
+      - name:  Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name:  Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name:  Build and Push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build the image pointing to the root context
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPO_IAM:latest \
+            -t $ECR_REGISTRY/$ECR_REPO_IAM:$IMAGE_TAG \
+            -f apps/iam-service/Dockerfile .
+          
+          # Push both tags
+          docker push $ECR_REGISTRY/$ECR_REPO_IAM:latest
+          docker push $ECR_REGISTRY/$ECR_REPO_IAM:$IMAGE_TAG
+          
+          echo " IAM Service Pushed: $IMAGE_TAG"
+
+  # --- JOB 2: BUILD ANONYMOUS SERVICE ---
+  build-anonymous:
+    name:  Build Anonymous Service
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name:  Checkout Code
+        uses: actions/checkout@v4
+
+      - name:  Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name:  Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name:  Build and Push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPO_ANON:latest \
+            -t $ECR_REGISTRY/$ECR_REPO_ANON:$IMAGE_TAG \
+            -f apps/anonymously/Dockerfile .
+          
+          docker push $ECR_REGISTRY/$ECR_REPO_ANON:latest
+          docker push $ECR_REGISTRY/$ECR_REPO_ANON:$IMAGE_TAG
+          
+          echo " Anonymous Service Pushed: $IMAGE_TAG"

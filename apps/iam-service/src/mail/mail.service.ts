@@ -21,11 +21,12 @@ export class MailService {
       },
     });
     this.from = this.configService.getOrThrow<string>('MAIL_FROM');
-    this.frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    this.frontendUrl =
+      this.configService.getOrThrow<string>('FRONTEND_URL');
   }
 
   async sendPasswordReset(email: string, token: string) {
-    const resetUrl = `${this.frontendUrl}/auth/reset-password?token=${token}`;
+    const resetUrl = `${this.frontendUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: `"HelpingBots"< ${this.from}>`,
@@ -46,7 +47,7 @@ export class MailService {
   }
 
   async sendWelcomeEmail(email: string, token: string) {
-    const verifyUrl = `${this.frontendUrl}/auth/verify-email?token=${token}`;
+    const verifyUrl = `${this.frontendUrl}/verify-email?token=${token}`;
 
     const mailOptions = {
       from: `"HelpingBots" <${this.from}>`,
