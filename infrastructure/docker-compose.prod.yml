@@ -36,22 +36,15 @@ services:
 
   # 4. IAM Service
   iam-service:
-   
     image: 905418297704.dkr.ecr.ap-south-1.amazonaws.com/helpingbots/iam-service:latest
     env_file: .env.production
     environment:
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/iam_db?schema=iam
       REDIS_URL: redis://redis:6379
       # Keys are already inside the image from Docker build stage
-      JWT_PRIVATE_KEY_PATH: ./jwt-private.pem
-      JWT_PUBLIC_KEY_PATH: ./jwt-public.pem
-      # Missing configs added below (Mapped to .env.production)
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_USER: ${MAIL_USER}
-      MAIL_PASS: ${MAIL_PASS}
-      MAIL_FROM: ${MAIL_FROM}
-      FRONTEND_URL: ${FRONTEND_URL}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      AUTH_SERVICE_PUBLIC_KEY: ${AUTH_SERVICE_PUBLIC_KEY}
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,7 +58,6 @@ services:
     env_file: .env.production
     environment:
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/iam_db?schema=posting
-      AUTH_SERVICE_PUBLIC_KEY: ${AUTH_SERVICE_PUBLIC_KEY}
     depends_on:
       postgres:
         condition: service_healthy
