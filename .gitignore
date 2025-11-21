@@ -66,3 +66,5 @@ apps/iam-service/secrets/*
 docker-compose.test.yml
 /home/rewant/Desktop/authentication/FromScratch/.pnpm-store
 Notes.md
+prod-key-helpingbots.pem
+infrastructure/nginx/certs/*

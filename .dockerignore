@@ -33,3 +33,4 @@ pnpm-debug.log*
 # *.pem
 # *.key
 .pnpm-store
+prod-key-helpingbots.pem

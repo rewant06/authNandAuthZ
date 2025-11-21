@@ -1,0 +1,75 @@
+services:
+  # 1. Nginx (The Gatekeeper)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - iam-service
+      - anonymously-service
+    restart: always
+
+  # 2. Database (Self-Hosted)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: iam_db
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d iam_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 3. Redis (Self-Hosted)
+  redis:
+    image: redis:7-alpine
+    restart: always
+
+  # 4. IAM Service
+  iam-service:
+   
+    image: 905418297704.dkr.ecr.ap-south-1.amazonaws.com/helpingbots/iam-service:latest
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/iam_db?schema=iam
+      REDIS_URL: redis://redis:6379
+      # Keys are already inside the image from Docker build stage
+      JWT_PRIVATE_KEY_PATH: ./jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: ./jwt-public.pem
+      # Missing configs added below (Mapped to .env.production)
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM: ${MAIL_FROM}
+      FRONTEND_URL: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+
+  # 5. Anonymous Service
+  anonymously-service:
+    image: 905418297704.dkr.ecr.ap-south-1.amazonaws.com/helpingbots/anonymously-service:latest
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/iam_db?schema=posting
+      AUTH_SERVICE_PUBLIC_KEY: ${AUTH_SERVICE_PUBLIC_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  postgres_data_prod:

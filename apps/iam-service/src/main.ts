@@ -1,22 +1,27 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger = new Logger('Bootstrap');
   app.set('trust proxy', 1);
 
   app.use(cookieParser());
 
+  const frontendUrlEnv = process.env.FRONTEND_URL || '';
+  const allowedOrigins = frontendUrlEnv.split(',').map((url) => url.trim());
+
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [process.env.FRONTEND_URL];
+      if (!origin) return callback(null, true);
 
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        logger.warn(`Blocked CORS origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -35,5 +40,6 @@ async function bootstrap() {
   );
 
   await app.listen(process.env.PORT ?? 8000);
+  logger.log(`Application running on port ${process.env.PORT ?? 8000}`);
 }
 bootstrap();
