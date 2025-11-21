@@ -46,8 +46,7 @@ RUN pnpm install --prod --frozen-lockfile
 # 2. Copy Built Assets
 COPY --chown=nestjs:nodejs --from=builder /app/apps/iam-service/dist ./apps/iam-service/dist
 COPY --chown=nestjs:nodejs --from=builder /app/apps/iam-service/prisma ./apps/iam-service/prisma
-COPY --chown=nestjs:nodejs --from=builder /app/apps/iam-service/jwt-private.pem ./jwt-private.pem
-COPY --chown=nestjs:nodejs --from=builder /app/apps/iam-service/jwt-public.pem ./jwt-public.pem
+
 
 # 3. Generate Client in Runner
 WORKDIR /app/apps/iam-service
