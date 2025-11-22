@@ -39,7 +39,7 @@ export const manuallyVerifyUser = async (userId: string) => {
 
 export const getAllUsers = async (page = 1, limit = 10) => {
   const { data } = await api.get<PaginatedResponse<User>>(
-    `/users?page=${page}&limit=${limit}`
+    `/users/?page=${page}&limit=${limit}`
   );
   return data;
 };

@@ -41,9 +41,6 @@ services:
     environment:
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/iam_db?schema=iam
       REDIS_URL: redis://redis:6379
-      # Keys are already inside the image from Docker build stage
-      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
-      AUTH_SERVICE_PUBLIC_KEY: ${AUTH_SERVICE_PUBLIC_KEY}
 
     depends_on:
       postgres:
