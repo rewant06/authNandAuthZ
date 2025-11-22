@@ -6,8 +6,10 @@ import { useAuthStore } from "@/store/auth.store";
 import { refreshAccessToken } from "./auth.service";
 import { logger } from "./logger";
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.helpingbots.in";
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
